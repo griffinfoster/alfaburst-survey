@@ -41,7 +41,7 @@ if __name__ == '__main__':
         t0 = unflaggedDf['MJD'].iloc[0] # earliest timestamp
 
         winDf = unflaggedDf[unflaggedDf['MJD'] >= t0][unflaggedDf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
-        print 'Cluster:', niter, 'MJD:', t0, 'DM Range: (%i %i)'%(winDf['DM'].min(), winDf['DM'].max()), 'Event Count:', len(winDf.index), 'Max SNR:', winDf['SNR'].max()
+        print 'Cluster:', niter, 'MJD:', t0, 'DM Range: (%i %i)'%(winDf['DM'].min(), winDf['DM'].max()), 'Event Count:', len(winDf.index), 'Max SNR:', winDf['SNR'].max(), 'Beams:', winDf['Beam'].unique()
 
         unflaggedDf.drop(winDf.index, inplace=True) # drop rows from original df
         niter += 1
