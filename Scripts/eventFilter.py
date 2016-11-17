@@ -113,6 +113,18 @@ def filterDMRange(idf, normDMrange=0.25, tWinInSec=0.5, verbose=False):
 
     return pd.concat(dfList, ignore_index=True) # concate df list and output final df
 
+def filterMinSNR(idf, minSNR=10.):
+    """Flag events if less than a minimum SNR
+    input:
+        idf: input dataframe
+        minSNR: float, minimum SNR
+    returns: flagged data frame
+    """
+    print 'Minimum SNR Threshold:', minSNR
+    idx = idf[idf['SNR'] < minSNR].index
+    idf.set_value(idx, 'Flag',  1)
+    return idf
+
 if __name__ == '__main__':
     from optparse import OptionParser
     o = OptionParser()
@@ -129,7 +141,8 @@ if __name__ == '__main__':
     else: # Assume file is a CSV
         df = pd.read_csv(args[0], index_col=0)
 
-    df.sort(columns='MJD', inplace=True) # Sort events based on timestamp
+    #df.sort(columns='MJD', inplace=True) # Sort events based on timestamp
+    df.sort_values(by='MJD', inplace=True) # Sort events based on timestamp
     df.reset_index(inplace=True, drop=True) # Reindex based on timestamp sort
 
     ######## N events Threshold Filter ###
@@ -142,6 +155,10 @@ if __name__ == '__main__':
     ######## DM Range Filter #############
     df = concatDf
     concatDf = filterDMRange(df, normDMrange=0.25, tWinInSec=0.5, verbose=opts.verbose)
+
+    ######## Minimum SNR Filter ##########
+    df = concatDf
+    concatDf = filterMinSNR(df, minSNR=10.1)
 
     ######### N events Threshold Filter ###
     ######### Filter Start ################
