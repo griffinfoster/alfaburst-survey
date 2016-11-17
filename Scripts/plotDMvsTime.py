@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     mjdRange = df['MJD'].max() - df['MJD'].min()
     plt.xlim(df['MJD'].min() - 0.1*mjdRange, df['MJD'].max() + 0.1*mjdRange) # add a bit of buffer
-    plt.ylim(0., max(df['DM'].max(), 12000.))
+    plt.ylim(0., max(df['DM'].max(), 10100.))
 
     plt.colorbar()
     plt.xlabel('Modified Julian Date')

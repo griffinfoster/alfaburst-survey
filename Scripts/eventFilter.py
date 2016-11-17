@@ -9,6 +9,107 @@ import pandas as pd
 
 pd.set_option('precision', 10)
 
+def filterNEvents(idf, nThresh=100, tWinInSec=0.5, verbose=False):
+    """Flag events if the number of events exceeds nThresh during the time window tWinInSec
+    input:
+        idf: input dataframe
+        nThresh: int, maximum number of events allowed per time window
+        tWinInSec: float, time window in seconds
+        verbose: boolean
+    returns: flagged data frame
+    """
+    dfList = []
+    niter = 0
+
+    #nThresh = 100 # Maximum number of events in a time window before flagging as RFI
+    #tWinInSec = 0.5 # time window in seconds
+    tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
+
+    while not df.empty:
+        t0 = idf['MJD'].iloc[0] # earliest timestamp
+
+        winDf = idf[df['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+
+        nEvents = len(winDf.index) # Number of events in the time window
+        if verbose: print 'Window %i MJD: %f Events: %i'%(niter, t0, nEvents)
+        if nEvents > nThresh:
+            winDf['Flag'] = 1
+
+        df.drop(winDf.index, inplace=True) # drop rows from original df
+
+        dfList.append(winDf) # add filtered df to list
+
+        niter += 1
+
+    return pd.concat(dfList, ignore_index=True) # concate df list and output final df
+
+def filterOnlyOneBeam(idf, tWinInSec=0.5, verbose=False):
+    """Flag events if events occur in more than one beam during the time window tWinInSec
+    input:
+        idf: input dataframe
+        tWinInSec: float, time window in seconds
+        verbose: boolean
+    returns: flagged data frame
+    """
+    dfList = []
+    niter = 0
+
+    #tWinInSec = 0.5 # time window in seconds
+    tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
+
+    while not df.empty:
+        t0 = idf['MJD'].iloc[0] # earliest timestamp
+
+        winDf = idf[df['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+
+        uniqueBeams = winDf['Beam'].unique()
+        nBeams = len(uniqueBeams)
+        if verbose: print 'Window %i MJD: %f Unique Beams: %i'%(niter, t0, nBeams)
+        if nBeams != 1: # flag if events occur in multiple beams
+            winDf['Flag'] = 1
+
+        df.drop(winDf.index, inplace=True) # drop rows from original df
+
+        dfList.append(winDf) # add filtered df to list
+
+        niter += 1
+
+    return pd.concat(dfList, ignore_index=True) # concate df list and output final df
+
+def filterDMRange(idf, normDMrange=0.25, tWinInSec=0.5, verbose=False):
+    """Flag events if the normalized DM range of events exceeds normDMrange during the time window tWinInSec
+    input:
+        idf: input dataframe
+        normDMrange: float, minimum range of (DM_max - DM_min)/DM_median to flag
+        tWinInSec: float, time window in seconds
+        verbose: boolean
+    returns: flagged data frame
+    """
+    dfList = []
+    niter = 0
+
+    #normDMrange = 0.25 # normalized DM range (DM_max - DM_min)/DM_median to use as threshold
+    #tWinInSec = 0.5 # time window in seconds
+    tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
+
+    while not df.empty:
+        t0 = idf['MJD'].iloc[0] # earliest timestamp
+
+        winDf = idf[df['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+
+        winDMrange = (winDf['DM'].max() - winDf['DM'].min()) / winDf['DM'].median()
+        if verbose: print 'Window %i MJD: %f DM Range: %f'%(niter, t0, winDMrange)
+        if winDMrange > normDMrange:
+            winDf['Flag'] = 1
+
+        df.drop(winDf.index, inplace=True) # drop rows from original df
+
+        dfList.append(winDf) # add filtered df to list
+
+        niter += 1
+
+    return pd.concat(dfList, ignore_index=True) # concate df list and output final df
+
 if __name__ == '__main__':
     from optparse import OptionParser
     o = OptionParser()
@@ -16,6 +117,8 @@ if __name__ == '__main__':
     o.set_description(__doc__)
     o.add_option('-o', '--output', dest='output', default='filtered.dat',
         help='Output filename, if name ends in .pkl save as python pickle, else save as CSV, default: filtered.dat')
+    o.add_option('-v', '--verbose', dest='verbose', action='store_true',
+        help='Verbose output')
     opts, args = o.parse_args(sys.argv[1:])
 
     if args[0].endswith('.pkl'): # Load Pickle file
@@ -26,45 +129,113 @@ if __name__ == '__main__':
     df.sort(columns='MJD', inplace=True) # Sort events based on timestamp
     df.reset_index(inplace=True, drop=True) # Reindex based on timestamp sort
 
-    ######## Filter Start ################
+    ######## N events Threshold Filter ###
+    concatDf = filterNEvents(df, nThresh=150, tWinInSec=0.1, verbose=opts.verbose)
 
-    dfList = []
-    niter = 0
+    ######## Unique Beam Filter ##########
+    df = concatDf
+    concatDf = filterOnlyOneBeam(df, tWinInSec=0.5, verbose=opts.verbose)
 
-    nThresh = 50 # Maximum number of events in a time window before flagging as RFI
-    tWinInSec = 0.01 # time window in seconds
-    tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
+    ######## DM Range Filter #############
+    df = concatDf
+    concatDf = filterDMRange(df, normDMrange=0.25, tWinInSec=0.5, verbose=opts.verbose)
 
-    while not df.empty:
-        t0 = df['MJD'].iloc[0] # earliest timestamp
+    ######### N events Threshold Filter ###
+    ######### Filter Start ################
 
-        print 'Window %i MJD: %f'%(niter, t0)
+    #dfList = []
+    #niter = 0
 
-        winDf = df[df['MJD'] >= t0][df['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+    #nThresh = 100 # Maximum number of events in a time window before flagging as RFI
+    #tWinInSec = 0.5 # time window in seconds
+    #tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
 
-        nEvents = len(winDf.index) # Number of events in the time window
-        if nEvents > nThresh:
-            winDf['Flag'] = 1
+    #while not df.empty:
+    #    t0 = df['MJD'].iloc[0] # earliest timestamp
 
-        df.drop(winDf.index, inplace=True) # drop rows from original df
 
-        dfList.append(winDf) # add filtered df to list
+    #    winDf = df[df['MJD'] >= t0][df['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
 
-        niter += 1
+    #    nEvents = len(winDf.index) # Number of events in the time window
+    #    print 'Window %i MJD: %f Events: %i'%(niter, t0, nEvents)
+    #    if nEvents > nThresh:
+    #        winDf['Flag'] = 1
 
-    ######## Filter End ##################
+    #    df.drop(winDf.index, inplace=True) # drop rows from original df
 
-    concatDf = pd.concat(dfList, ignore_index=True) # concate df list and output final df
+    #    dfList.append(winDf) # add filtered df to list
+
+    #    niter += 1
+
+    #concatDf = pd.concat(dfList, ignore_index=True) # concate df list and output final df
+
+    ######### Filter End ##################
+
+    ######### Unique Beam Filter ##########
+    ######### Filter Start ################
+
+    #df = concatDf
+    #dfList = []
+    #niter = 0
+
+    #tWinInSec = 0.5 # time window in seconds
+    #tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
+
+    #while not df.empty:
+    #    t0 = df['MJD'].iloc[0] # earliest timestamp
+
+    #    winDf = df[df['MJD'] >= t0][df['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+
+    #    uniqueBeams = winDf['Beam'].unique()
+    #    nBeams = len(uniqueBeams)
+    #    print 'Window %i MJD: %f Unique Beams: %i'%(niter, t0, nBeams)
+    #    if nBeams != 1: # flag if events occur in multiple beams
+    #        winDf['Flag'] = 1
+
+    #    df.drop(winDf.index, inplace=True) # drop rows from original df
+
+    #    dfList.append(winDf) # add filtered df to list
+
+    #    niter += 1
+
+    #concatDf = pd.concat(dfList, ignore_index=True) # concate df list and output final df
+
+    ######### Filter End ##################
+
+    ######### DM Range Filter #############
+    ######### Filter Start ################
+
+    #df = concatDf
+    #dfList = []
+    #niter = 0
+
+    #normDMrange = 0.25 # normalized DM range (DM_max - DM_min)/DM_median to use as threshold
+    #tWinInSec = 0.5 # time window in seconds
+    #tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
+
+    #while not df.empty:
+    #    t0 = df['MJD'].iloc[0] # earliest timestamp
+
+    #    winDf = df[df['MJD'] >= t0][df['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+
+    #    winDMrange = (winDf['DM'].max() - winDf['DM'].min()) / winDf['DM'].median()
+    #    print 'Window %i MJD: %f DM Range: %f'%(niter, t0, winDMrange)
+    #    if winDMrange > normDMrange:
+    #        winDf['Flag'] = 1
+
+    #    df.drop(winDf.index, inplace=True) # drop rows from original df
+
+    #    dfList.append(winDf) # add filtered df to list
+
+    #    niter += 1
+
+    #concatDf = pd.concat(dfList, ignore_index=True) # concate df list and output final df
+
+    ######### Filter End ##################
 
     if opts.output.endswith('.pkl'):
         concatDf.to_pickle(opts.output) # Save to Pickle file
     else: concatDf.to_csv(opts.output) # Save to CSV file
-
-    # Filter: too many events within a time window
-    # Filter: events occuring in multiple beams
-
-    # Plot: DM vs time scatter (size based on SNR) of all events
-    # Plot: DM vs time scatter (size based on SNR) of unflagged events
 
     # Save dataframe of all events
     # Save dataframe of unflagged events
