@@ -18,6 +18,7 @@ def filterNEvents(idf, nThresh=100, tWinInSec=0.5, verbose=False):
         verbose: boolean
     returns: flagged data frame
     """
+    print 'N Events Filter N:%i'%nThresh
     dfList = []
     niter = 0
 
@@ -25,17 +26,17 @@ def filterNEvents(idf, nThresh=100, tWinInSec=0.5, verbose=False):
     #tWinInSec = 0.5 # time window in seconds
     tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
 
-    while not df.empty:
+    while not idf.empty:
         t0 = idf['MJD'].iloc[0] # earliest timestamp
 
-        winDf = idf[df['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+        winDf = idf[idf['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
 
         nEvents = len(winDf.index) # Number of events in the time window
         if verbose: print 'Window %i MJD: %f Events: %i'%(niter, t0, nEvents)
         if nEvents > nThresh:
             winDf['Flag'] = 1
 
-        df.drop(winDf.index, inplace=True) # drop rows from original df
+        idf.drop(winDf.index, inplace=True) # drop rows from original df
 
         dfList.append(winDf) # add filtered df to list
 
@@ -51,16 +52,17 @@ def filterOnlyOneBeam(idf, tWinInSec=0.5, verbose=False):
         verbose: boolean
     returns: flagged data frame
     """
+    print 'Only One Beam Filter'
     dfList = []
     niter = 0
 
     #tWinInSec = 0.5 # time window in seconds
     tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
 
-    while not df.empty:
+    while not idf.empty:
         t0 = idf['MJD'].iloc[0] # earliest timestamp
 
-        winDf = idf[df['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+        winDf = idf[idf['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
 
         uniqueBeams = winDf['Beam'].unique()
         nBeams = len(uniqueBeams)
@@ -68,7 +70,7 @@ def filterOnlyOneBeam(idf, tWinInSec=0.5, verbose=False):
         if nBeams != 1: # flag if events occur in multiple beams
             winDf['Flag'] = 1
 
-        df.drop(winDf.index, inplace=True) # drop rows from original df
+        idf.drop(winDf.index, inplace=True) # drop rows from original df
 
         dfList.append(winDf) # add filtered df to list
 
@@ -85,6 +87,7 @@ def filterDMRange(idf, normDMrange=0.25, tWinInSec=0.5, verbose=False):
         verbose: boolean
     returns: flagged data frame
     """
+    print 'Normalized DM Range Filter DM Range:%f'%normDMrange
     dfList = []
     niter = 0
 
@@ -92,17 +95,17 @@ def filterDMRange(idf, normDMrange=0.25, tWinInSec=0.5, verbose=False):
     #tWinInSec = 0.5 # time window in seconds
     tWin = tWinInSec * (1./(24.*60.*60.)) # time window in fractions of a Julian Day, first value is in seconds
 
-    while not df.empty:
+    while not idf.empty:
         t0 = idf['MJD'].iloc[0] # earliest timestamp
 
-        winDf = idf[df['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
+        winDf = idf[idf['MJD'] >= t0][idf['MJD'] < t0+tWin] # dataframe for time window [t0, t0+tWin)
 
         winDMrange = (winDf['DM'].max() - winDf['DM'].min()) / winDf['DM'].median()
         if verbose: print 'Window %i MJD: %f DM Range: %f'%(niter, t0, winDMrange)
         if winDMrange > normDMrange:
             winDf['Flag'] = 1
 
-        df.drop(winDf.index, inplace=True) # drop rows from original df
+        idf.drop(winDf.index, inplace=True) # drop rows from original df
 
         dfList.append(winDf) # add filtered df to list
 
