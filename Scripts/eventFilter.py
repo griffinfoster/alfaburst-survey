@@ -34,7 +34,7 @@ def filterNEvents(idf, nThresh=100, tWinInSec=0.5, verbose=False):
         nEvents = len(winDf.index) # Number of events in the time window
         if verbose: print 'Window %i MJD: %f Events: %i'%(niter, t0, nEvents)
         if nEvents > nThresh:
-            winDf['Flag'] = 1
+            winDf['Flag'] += 1
 
         idf.drop(winDf.index, inplace=True) # drop rows from original df
 
@@ -68,7 +68,7 @@ def filterOnlyOneBeam(idf, tWinInSec=0.5, verbose=False):
         nBeams = len(uniqueBeams)
         if verbose: print 'Window %i MJD: %f Unique Beams: %i'%(niter, t0, nBeams)
         if nBeams != 1: # flag if events occur in multiple beams
-            winDf['Flag'] = 1
+            winDf['Flag'] += 1
 
         idf.drop(winDf.index, inplace=True) # drop rows from original df
 
@@ -103,7 +103,7 @@ def filterDMRange(idf, normDMrange=0.25, tWinInSec=0.5, verbose=False):
         winDMrange = (winDf['DM'].max() - winDf['DM'].min()) / winDf['DM'].median()
         if verbose: print 'Window %i MJD: %f DM Range: %f'%(niter, t0, winDMrange)
         if winDMrange > normDMrange:
-            winDf['Flag'] = 1
+            winDf['Flag'] += 1
 
         idf.drop(winDf.index, inplace=True) # drop rows from original df
 
@@ -122,7 +122,8 @@ def filterMinSNR(idf, minSNR=10.):
     """
     print 'Minimum SNR Threshold:', minSNR
     idx = idf[idf['SNR'] < minSNR].index
-    idf.set_value(idx, 'Flag',  1)
+    #idf.set_value(idx, 'Flag',  1)
+    idf.set_value(idx, 'Flag',  idf.Flag[idx]+1)
     return idf
 
 if __name__ == '__main__':
