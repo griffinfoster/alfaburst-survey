@@ -212,9 +212,6 @@ if __name__ == '__main__':
     df = concatDf
     concatDf = filterMinSNR(df, minSNR=10.1)
 
-    print concatDf
-    exit()
-
     if opts.output.endswith('.pkl'):
         concatDf.to_pickle(opts.output) # Save to Pickle file
     else: concatDf.to_csv(opts.output) # Save to CSV file
