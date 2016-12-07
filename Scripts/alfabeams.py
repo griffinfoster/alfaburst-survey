@@ -65,6 +65,13 @@ for pointing in pointings:
     fig.gca().add_artist(beam)
     i += 1
 
+#20:04:52.286
+srcRA = 20.0811905556 * degPerHour
+#+31:37:10.01
+srcDec = 31.6194472222 
+plt.plot(srcRA, srcDec, "bo")
+plt.text(srcRA + 0.005, srcDec + 0.005, "B2002+31", color="black", fontsize=12)
+
 '''
 #19:13:21.061
 srcRA = 19.22251694444444444443 * degPerHour
@@ -81,7 +88,6 @@ srcRA = 19.25832888888888888888 * degPerHour
 srcDec = 10.16213055555555555555
 plt.plot(srcRA, srcDec, "bo")
 plt.text(srcRA + 0.005, srcDec + 0.005, "B1913+10", color="black", fontsize=12)
-'''
 
 #19:03:29.981
 srcRA = 19.0583280556 * degPerHour
@@ -89,7 +95,7 @@ srcRA = 19.0583280556 * degPerHour
 srcDec = 1.5939805556
 plt.plot(srcRA, srcDec, "bo")
 plt.text(srcRA + 0.005, srcDec + 0.005, "B1900+01", color="black", fontsize=12)
-
+'''
 
 '''
 # read the source list
