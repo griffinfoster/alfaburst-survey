@@ -14,7 +14,7 @@
 
 \section{Computers}
 
-You need to have an NAIC account to log in remotely. Once you have logged on to
+You need an NAIC account to log in remotely. Once you have logged on to
 \url{remoto.naic.edu} using your NAIC account, you can access the ALFABURST
 (`AB' from hereon) machines as follows: The head node host name is
 \url{alfaburst}. You need to log in to this machine using your AB credentials.
@@ -173,7 +173,6 @@ Redis database on the S6 head node. For reference, mainly.
 \end{itemize}
 
 
-
 \section{Basic Operating Procedure}
 
 The cron script \url{cognizeALFA.rb} starts and stops data acquisition
@@ -221,7 +220,7 @@ events.}.
     6 and 5.\label{fig_dmvst}}
 \end{figure}
 
-\subsubsection{Step 1: Get the buffer number}
+\subsubsection*{Step 1: Get the buffer number}
 
 First, check the \url{*dm*} file corresponding to the plot. SSH to \url{abc3},
 corresponding to beam 6, and grep for the string `buffer' in the DM file.
@@ -255,7 +254,7 @@ The event corresponds to a smoothing length of 32, which, at a sampling
 interval of 256~$\mu$s, corresponds to a pulse width of 8.192~ms.
 
 
-\subsubsection{Step 2: Extract the buffer}
+\subsubsection*{Step 2: Extract the buffer}
 
 The filterbank file \url{} contains all the buffers in which events were
 detected in this observing session, so we will extract just the buffer we are
@@ -264,7 +263,7 @@ interested in.
 \small{
 \begin{verbatim}
 $ cd /data/Survey/Tmp
-$ ~/Survey/Scripts/extractBuffer.rb -b 24 ../Data/Beam6_fb_D20150907T194703.fil
+$ /home/artemis/Survey/Scripts/extractBuffer.rb -b 24 ../Data/Beam6_fb_D20150907T194703.fil
 ...
 $ ls -ltrh
 ...
@@ -279,8 +278,7 @@ like a standard filterbank file. The nodes have both
 SIGPROC\footnote{\url{http://sigproc.sourceforge.net/}} and
 YAPP\footnote{\url{http://jayanthc.github.io/yapp/}} installed for this purpose.
 
-
-\subsubsection{Step 3: Decimate the data}
+\subsubsection*{Step 3: Decimate the data}
 
 Since the highest S/N event has a smoothing length of 32, we will decimate the
 data in time, using SIGPROC (note that the output file size changes, as
@@ -297,9 +295,29 @@ $ ls -ltrh
 }
 
 
-\subsubsection{Step 4: Plot the buffer}
+\subsubsection*{Step 4: Plot the buffer}
 
-We will use YAPP to visualise the data.
+We will use YAPP to visualise the data. First, we will dedisperse the buffer
+visually, as shown below:
+
+\small{
+\begin{verbatim}
+$ yapp_dedisperse -d 262 -m hot -g -n 1024 temp.fil
+\end{verbatim}
+}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{dd_tsnofs.png}
+\caption{Data smoothed/decimated in time by a factor of 32, and dedispersed.
+    A pulse can be seen between the 4- and 5-second marks in the dedispersed
+    time series.
+    \label{fig_dd_tsnofs}}
+\end{figure}
+
+Figure~\ref{fig_dd_tsnofs} shows the output of the above command, with the
+pulse clearly visible in the dedispersed time series. Once we have confirmed
+that there is clearly something in the dedispersed data, it is worth taking a
+look at the filterbank data.
 
 \small{
 \begin{verbatim}
@@ -333,13 +351,140 @@ $ yapp_viewdata -m hot -n 1024 -s 4 -p 1 temp.fil
 \end{figure}
 
 In Figure~\ref{fig_fb_tsnofs_zoomed}, the dispersed pulse can be clearly seen.
-Note that in some cases, the data may need to be decimated in frequency as
+Note that, in some cases, the data may need to be decimated in frequency as
 well, for the pulse to become apparent.
 
+Note that, in addition to the $S/N$ of the pulse, rendering issues may affect
+whether a pulse is apparent in the grayscale plots produced by YAPP, so it is
+recommended that the dedispersion step above is also performed.
 
-\subsubsection{Step 5: Get pointings}
+\textbf{Extracting the buffer may be optional:} Extracting the buffer is
+required if one needs to proceed with decimating the data or do any other kind
+of signal processing. However, if one is interested only in viewing the raw
+data, YAPP can be used as follows. Since we know that each buffer is
+32768~samples long and each sample represents 256~$\mu$s, we can just skip the
+duration corresponding to 23 buffers' worth of data (note that buffer counts
+start at 1).
 
-...to be added...
+\small{
+\begin{verbatim}
+$ yapp_viewdata -m hot -n 32768 -s 192.937984 ../Data/Beam6_fb_D20150907T194703.fil
+\end{verbatim}
+}
+
+\subsubsection*{Step 5: Get pointing information}
+
+Once we have visually confirmed that a real pulse exists in our data, it is
+time to check if it originated in any of the known sources. The first step in
+this process is to get the pointing of the beam that the pulse was found in. To
+do this, we need to use the raw SCRAM dump for the day of the observation,
+resident on the S6 head node, in \url{/data/serendip6}. The script
+\url{/home/artemis/getPointings.rb} on \url{serendip6} copies the SCRAM dump to
+a scratch area and extracts the pointing information, given the MJD of the
+event (found in the \url{*dm*} file).
+
+\small{
+\begin{verbatim}
+$ /home/artemis/getPointings.rb -m 57273.052018887 -u
+1441674894
+ls /data/serendip6/scramdump.* | cut -d '.' -f 2
+/data/serendip6/scramdump.1441728353.gz.at_ucb
+cp -a /data/serendip6/scramdump.1441728353.gz.at_ucb /home/artemis/
+gunzip --force --name --suffix '' /home/artemis/scramdump.1441728353.gz.at_ucb
+s6_observatory -nodb -stdout -infile /home/artemis/scramdump.1441728353 2>&1 > /dev/null ...
+... | grep 1441674894 | sort | uniq | grep RA0 | tail -1
+SCRAM:DERIVED DERTIME 1441674894 RA0 20.0870184820 DEC0 31.6797526839 RA1 ...
+20.0882034790 DEC1 31.5762092232 RA2 20.0937621054 DEC2 31.6480614290 RA3 ...
+20.0925845567 DEC3 31.7517543100 RA4 20.0858295333 DEC4 31.7832084015 RA5 ...
+20.0802614126 DEC5 31.7107828505 RA6 20.0814576722 DEC6 31.6074755720
+rm -f /home/artemis/scramdump.1441728353
+\end{verbatim}
+}
+
+The above script can also be run from the AB machines (as opposed to logging on
+to \url{serendip6}), as follows:
+
+\small{
+\begin{verbatim}
+$ ssh artemis@serendip6 "/home/artemis/getPointings.rb -m 57273.051967593 -u"
+...
+\end{verbatim}
+}
+
+Note that this takes around 20 minutes to run.
+
+
+\subsubsection*{Step 6: Plot the beam pointings}
+
+The next step is to plot the pointings obtained from the SCRAM dump, along with
+the positions of all known pulsars in the vicinity of the beams on the sky. We
+will use \url{/home/artemis/Survey/Scripts/alfabeams.py} on \url{alfaburst} for
+this. First, copy the RA and declination information output by
+\url{getPointings.rb} into a file named \url{pointings}, in the following
+format:
+
+\small{
+\begin{verbatim}
+RA0,DEC0
+RA1,DEC1
+RA2,DEC2
+RA3,DEC3
+RA4,DEC4
+RA5,DEC5
+RA6,DEC6
+\end{verbatim}
+}
+
+Create a file named \url{sources} with the RA and declination information of
+all known sources that you would like to plot, in the same format as above.
+(NOTE: \url{alfabeams.py} needs to be edited a little to do this part.) Then
+run the script. Figure~\ref{fig_pointings} shows a sample plot, where PSR
+B2002+31 is plotted along with all beam pointings when a pulse from that source
+was detected in beam 6 (see the diagnostic plot in Figure~\ref{fig_dmvst}). It
+is now clear that the event seen in the diagnostic plot is a known pulsar. For
+the discovery of a new source, such a coincidence should not be present.
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{pointings.png}
+\caption{Plot of all beam pointings, showing the coincidence of beam 6 with the
+location of PSR B2002+31.\label{fig_pointings}}
+\end{figure}
+
+
+\section{Miscellaneous Notes}
+
+\subsection{Power Control}
+
+IPMI is used for node management independent of the OS. Among other things, it
+can be used to check if the power to a node is on, power on and off a node, and
+use Serial-Over-LAN to watch the remote system boot and access its terminal.
+The following are the power commands, where \url{N} is the node identifier (0,
+1, 2, or 3). The \url{x} appended to the node name indicates the IPMI
+interface.
+
+\small {
+\begin{verbatim}
+$ ipmitool -I lanplus -U ADMIN -P ADMIN -H abcNx power status
+$ ipmitool -I lanplus -U ADMIN -P ADMIN -H abcNx power on
+$ ipmitool -I lanplus -U ADMIN -P ADMIN -H abcNx power off
+\end{verbatim}
+}
+
+To activate Serial-Over-LAN (to see system messages as it boots, for example),
+the following command is used.
+
+\small {
+\begin{verbatim}
+$ ipmitool -I lanplus -U ADMIN -P ADMIN -H abcNx sol activate
+\end{verbatim}
+}
+
+
+\subsection{Bad Node}
+
+The compute node \url{abc2} goes offline sometimes. Power seems to be on
+according to IPMI, but the machine is unreachable over the network. When this
+happens, power cycle the node over IPMI.
 
 
 \end{document}
