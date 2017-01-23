@@ -4,7 +4,7 @@
 source /home/artemis/.bashrc
 
 rm -f /home/artemis/Survey/Flags/ALFABURST.FLAG
-ssh -o ConnectTimeout=20 artemis@abc0 "/home/artemis/Survey/Scripts/killobs"
-ssh -o ConnectTimeout=20 artemis@abc1 "/home/artemis/Survey/Scripts/killobs"
-ssh -o ConnectTimeout=20 artemis@abc2 "/home/artemis/Survey/Scripts/killobs"
-ssh -o ConnectTimeout=20 artemis@abc3 "/home/artemis/Survey/Scripts/killobs"
+ssh -o ConnectTimeout=20 artemis@abc0 "/home/artemis/Survey/Scripts/killobsSaveLogs"
+ssh -o ConnectTimeout=20 artemis@abc1 "/home/artemis/Survey/Scripts/killobsSaveLogs"
+ssh -o ConnectTimeout=20 artemis@abc2 "/home/artemis/Survey/Scripts/killobsSaveLogs"
+ssh -o ConnectTimeout=20 artemis@abc3 "/home/artemis/Survey/Scripts/killobsSaveLogs"
