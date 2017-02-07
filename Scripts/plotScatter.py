@@ -206,7 +206,7 @@ for f in files:
                 - (beamScale * beamID))
     col = cmap(beamID * 255 / numBeams)
     plotLabels.append(r"${\rm Beam~%d}$" % beamID)
-    plt.scatter(mjd, dm, s=size, c=col, label=plotLabels[i])
+    plt.scatter(mjd, dm, s=size, c=col, label=plotLabels[i], edgecolors='none', alpha=0.7)
     histSum += hist
     i += 1
 
