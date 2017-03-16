@@ -39,6 +39,8 @@ if __name__ == '__main__':
         help='Start time to plot/save in seconds, default: None')
     o.add_option('-w', '--window', dest='time_window', type='float', default=None,
         help='Time window to plot/save, default: None')
+    o.add_option('-t', '--time', dest='timeFactor', type='int', default=None,
+        help='Average in time by N samples, similar to SIGPROC decimate -t option')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -47,8 +49,15 @@ if __name__ == '__main__':
 
     tInt = fil.header['tsamp'] # get tInt
     freqsHz = fil.freqs * 1e6 # generate array of freqs in Hz
-    
+
     waterfall = np.reshape(fil.data, (fil.data.shape[0], fil.data.shape[2])) # reshape to (n integrations, n freqs)
+
+    if not opts.timeFactor is None: # average down by N time samples, waterfall.shape[0] must be divisible by N
+        if waterfall.shape[0] % opts.timeFactor==0:
+            waterfall = waterfall.reshape(waterfall.shape[0]/opts.timeFactor, opts.timeFactor, waterfall.shape[1]).sum(axis=1)
+            tInt *= opts.timeFactor
+        else:
+            print 'WARNING: %i time samples is NOT divisible by %i, ignoring -t/--time option'%(waterfall.shape[0], opts.timeFactor==0)
     ddwaterfall = dedispersion.incoherent(freqsHz, waterfall, tInt, dm, boundary='wrap') # apply dedispersion
 
     timeSeries = np.sum(ddwaterfall, axis=1)

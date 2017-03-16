@@ -4,7 +4,7 @@ Generate a dedispersion plot for each filterbank buffer based on a corresponding
 
 Requires:
 ALFABURST extractBuffer.rb, dedisperseFil.py script
-SIGPROC (decimate)
+*REMOVED SIGPROC (decimate)
 """
 
 import os,sys
@@ -89,18 +89,27 @@ if __name__ == '__main__':
             print cmd
         bufFileName = fbFileName.split('.fil')[0] + '.buffer%i'%bufferID + '.fil'
 
-        # Decimate the buffer by the binFactor using SIGPROC
-        decBufFileName = bufFileName.split('.fil')[0] + '.d%i'%binFactor + '.fil'
-        cmd = 'decimate ' + filFileDir + bufFileName + ' -c 1 -t %i > '%binFactor + filFileDir + decBufFileName
-        if opts.run:
-            proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #print proc.communicate() # (stdoutdata, stderrdata)
-        else:
-            print cmd
+        ## Decimate the buffer by the binFactor using SIGPROC
+        #decBufFileName = bufFileName.split('.fil')[0] + '.d%i'%binFactor + '.fil'
+        #cmd = 'decimate ' + filFileDir + bufFileName + ' -c 1 -t %i > '%binFactor + filFileDir + decBufFileName
+        #if opts.run:
+        #    proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #    #print proc.communicate() # (stdoutdata, stderrdata)
+        #else:
+        #    print cmd
+
+        ## Generate dedispersion plot
+        #dedispFig = decBufFileName.split('.fil')[0] + '.png'
+        #cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -S ' + dedispFig + ' ' + filFileDir + decBufFileName
+        #if opts.run:
+        #    proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #    #print proc.communicate() # (stdoutdata, stderrdata)
+        #else:
+        #    print cmd
 
         # Generate dedispersion plot
-        dedispFig = decBufFileName.split('.fil')[0] + '.png'
-        cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -S ' + dedispFig + ' ' + filFileDir + decBufFileName
+        dedispFig = bufFileName.split('.fil')[0] + '.d%i'%binFactor + '.png'
+        cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -S ' + dedispFig + ' -t %i '%binFactor + filFileDir + bufFileName
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             #print proc.communicate() # (stdoutdata, stderrdata)
