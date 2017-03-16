@@ -3,12 +3,20 @@
 \usepackage[a4paper, margin=1in]{geometry}
 \usepackage[obeyspaces]{url}
 \usepackage{graphicx}
+\usepackage{filemod}
 
 \title{ALFABURST User's Guide}
 \author{Jayanth Chennamangalam}
+\date{}
 
 \begin{document}
 \maketitle
+
+\begin{center}
+Created: 2016-06-02\\
+\renewcommand*{\thefilemoddate}[3]{#1-#2-#3} 
+Last Updated: \filemodprintdate{\jobname}
+\end{center}
 
 \tableofcontents
 
@@ -58,8 +66,8 @@ optimization flags, with \url{TIMING_ENABLED} turned on.
 Note that, for \url{pelican-alfaburst}, you may need to update the path to the
 CUDA library, if you wish to use a newer version of CUDA.
 
-To do a clean install on \url{alfaburst}, login as user \url{artemis}, and do
-the following:
+To do a clean install, login as user \url{artemis} to one of the
+\textbf{compute nodes}, and do the following:
 
 \begin{enumerate}
 \item \url{cd /home/artemis/Code/alfaburst/pelican/build; rm -rf *}
@@ -68,8 +76,30 @@ the following:
 \item \url{source ../../cmake_pelican-alfaburst_icpc}
 \end{enumerate}
 
-PELICAN libraries are installed in \url{/home/artemis/Code/alfaburst/pelican/install},
-while the AB binaries are installed in \url{/usr/local/pelican-lofar/bin}.
+Ideally, this should work. Unfortunately, some voodoo is required to make this
+work. On the first run of \url{source
+../../cmake_pelican-alfaburst_icpc}, you will encounter the following error:
+
+\small {
+\begin{verbatim}
+gcc: error: unrecognized command line option '-parallel'
+CMake Error at CMakeFiles/ampp-cuda_generated_DedispersionKernel.cu.o.cmake:200
+(message):
+  Error generating
+    /home/artemis/temp/alfaburst/pelican-alfaburst/build/lib/./ampp-cuda_generated_DedispersionKernel.cu.o
+\end{verbatim}
+}
+
+To overcome this, run \url{ccmake .}, which will open up the CMake curses
+interface. Now press \url{q} to quit, and run \url{source
+../../cmake_pelican-alfaburst_icpc} again. Everything should work now.
+
+PELICAN libraries are installed in
+\url{/home/artemis/Code/alfaburst/pelican/install}. To install AB binaries in
+\url{/usr/local/pelican-lofar/bin}, run \url{make install} (on a
+compute node). Prior to this, you will need to make the filesystem writable,
+like so: \url{mount -o rw,remount /usr/local}.
+
 
 \subsection{Survey Configuration Files and Scripts}
 
@@ -123,12 +153,18 @@ filterbank files. Candidate list files are written to
 \url{/data/Survey/Data/BeamX_dm*} on the compute nodes, where \url{X} is the
 beam identifier. A candidate list file (or `\url{*dm*} file') is a text file
 that contains comma-separated values, namely, MJD, DM and S/N of the event, and
-the smoothing length corresponding to the detection. The filterbank files are
-written to \url{/data/Survey/Data/BeamX_fb*} on the compute nodes. These files
-contain the buffers that events were detected in. Each filterbank file (or
-`\url{*fb*} file') may contain multiple buffers that may not be contiguous in
-time. The time samples in each buffer are contiguous, but time continuity is
-not guaranteed across buffers.
+the smoothing length corresponding to the detection.
+
+Filterbank files are written to \url{/data/Survey/Data/BeamX_fb*} on the
+compute nodes. These files contain the buffers that events were detected in.
+Each filterbank file (or `\url{*fb*} file') may contain multiple buffers that
+may not be contiguous in time. The time samples in each buffer are contiguous,
+but time continuity is not guaranteed across buffers.
+
+Each candidate list file has a corresponding filterbank counterpart. For
+example, \url{Beam6_dm_D20150907T194703.dat} and
+\url{Beam6_fb_D20150907T194703.fil} correspond to an observation that was done
+on 7 September 2015. The timestamp in the filenames are in local time (AST).
 
 
 \subsubsection{Scripts}
@@ -154,6 +190,8 @@ The following lists some of the major scripts in this directory:
 \begin{itemize}
 \item \url{alfabeams.py}: Displays the seven beams of ALFA and plots the
 location of pulsar(s). Requires manual editing.
+\item \url{crontabentries}: Backup of the crontab entries for data acquisition
+control and plotting.
 \item \url{extractBuffer.rb}: Similar to the Chilbolton script of similar name.
 \item \url{generatePages.rb}: Generates web pages with plots.
 \item \url{generatePlots.rb}: Copies latest data from compute nodes over to the
@@ -179,9 +217,10 @@ The cron script \url{cognizeALFA.rb} starts and stops data acquisition
 depending on the availability and configuration of ALFA. The restarting of data
 acquisition happens quite often during AGES observing, as they spend a lot of
 time calibrating their system, and keep changing the LO frequency. These data
--- usually a minute to a few minutes long -- are usually useless, as the LO
-frequency may have changed during the observation. This does not happen much
-with PALFA observations.
+-- usually a minute to a few minutes long -- may be useless: The LO frequency
+changed during the observation, towards the end, and it is unclear if they made
+any other changes to the front-end during this time. PALFA observations,
+however, do not have this problem.
 
 Observations at Arecibo usually start in late afternoon/evening and end
 early/late morning. Daytime is usually reserved for maintenance. To reduce
@@ -191,6 +230,29 @@ collected from 12:00 noon the previous day until 12:00 noon on the current day,
 plots are generated for that data. Web pages are also generated, and these are
 copied to the NAIC web server. These pages are available at
 \url{naic.edu/~alfafrb}.
+
+
+\subsection{Data Acquisition}
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=0.6\textwidth]{abrunstop.png}
+\end{center}
+\caption{The cron job runs \protect\url{cognizeALFA.rb} every minute, which
+checks if ALFA is the receiver in use. If yes,
+\protect\url{FRBsearch.sh} is run. This script runs \protect\url{frb_abcX.sh}
+on the compute nodes, where \protect\url{X} is the node identifier.
+\protect\url{frb_abcX.sh} kills any existing processes using
+\protect\url{killobs}, then runs both \protect\url{ABPipeline} and
+\protect\url{ABServer}. When \protect\url{cognizeALFA.rb} discovers that ALFA
+is no longer the receiver in use, it runs \protect\url{killobs_SSH}, which in
+turn runs \protect\url{killobs} on the compute nodes, terminating data
+acquisition.\label{fig_abrunstop}}
+\end{figure}
+
+Data acquisition relies on recognizing ALFA usage. This is achieved using a
+cron job that invokes other scripts, as shown in Figure~\ref{fig_abrunstop}.
+
 
 \subsection{Data Analysis}
 
@@ -485,6 +547,11 @@ $ ipmitool -I lanplus -U ADMIN -P ADMIN -H abcNx sol activate
 The compute node \url{abc2} goes offline sometimes. Power seems to be on
 according to IPMI, but the machine is unreachable over the network. When this
 happens, power cycle the node over IPMI.
+
+
+%\subsection{Logging}
+
+%Multiple log files are generated/appended to during AB observations.
 
 
 \end{document}

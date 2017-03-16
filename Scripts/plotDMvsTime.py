@@ -3,10 +3,22 @@
 Plot DM vs Time for an events file (CSV or pickle)
 """
 
+# TODO: convert time to LST
+# TODO: label beam colors
+
 import sys,os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import astropy.time
+import datetime
+
+# Check if $DISPLAY is set (for handling plotting on remote machines with no X-forwarding)
+if os.environ.has_key('DISPLAY'):
+    import matplotlib.pyplot as plt
+else:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
 
 pd.set_option('precision', 10)
 
@@ -23,6 +35,14 @@ if __name__ == '__main__':
         help='Save figure to file, file type determined based on extension.')
     o.add_option('--nodisplay', action='store_true',
         help='Do not display the figure')
+    o.add_option('--utc', dest='utc', action='store_true',
+        help='Show UTC on X-axis')
+    o.add_option('--utc_start', dest='utc_start', default=None,
+        help='Start datetime string in UTC, format: YYYYMMDD_HHMMSS')
+    o.add_option('--utc_end', dest='utc_end', default=None,
+        help='End datetime string in UTC, format: YYYYMMDD_HHMMSS')
+    o.add_option('--log', dest='log', action='store_true',
+        help='Plot y-axis in log space')
     opts, args = o.parse_args(sys.argv[1:])
 
     fig, axes = plt.subplots(figsize=(16,8)) # (width, height)
@@ -32,29 +52,56 @@ if __name__ == '__main__':
     else: # Assume file is a CSV
         df = pd.read_csv(args[0], index_col=0)
 
+    if opts.utc:
+        df['UTC'] = astropy.time.Time(df['MJD'], format='mjd').utc.datetime
+        timeType = 'UTC'
+    else:
+        timeType = 'MJD'
+
     scaleFactor = 4. # size scale factor
+
+    ax = plt.subplot(111)
 
     if opts.ignore:
         print 'Plotting all events', len(df.index)
-        plt.scatter(df['MJD'], df['DM'], s=df['SNR']*scaleFactor, c=df['SNR'], edgecolors='none', alpha=0.7, rasterized=True)
+        plt.scatter(df[timeType].values, df['DM'], s=df['SNR']*scaleFactor, c=df['Beam'], edgecolors='none', alpha=0.5, rasterized=True)
+    
     elif opts.unflagged:
         unflaggedDf = df[df['Flag']==0]
+        
         print 'Plotting unflagged events', len(unflaggedDf.index)
-        plt.scatter(unflaggedDf['MJD'], unflaggedDf['DM'], s=unflaggedDf['SNR']*scaleFactor, c=unflaggedDf['SNR'], edgecolors='none', alpha=0.7, rasterized=True)
+        plt.scatter(unflaggedDf[timeType].values, unflaggedDf['DM'], s=unflaggedDf['SNR']*scaleFactor, c=unflaggedDf['Beam'], edgecolors='none', alpha=0.5, rasterized=True)
+
     else:
         flaggedDf = df[df['Flag']!=0]
+        
         print 'Plotting flagged events', len(flaggedDf.index)
-        plt.scatter(flaggedDf['MJD'], flaggedDf['DM'], s=flaggedDf['SNR'], c=flaggedDf['SNR'], cmap=plt.get_cmap('gray'), edgecolors='none', alpha=0.15, rasterized=True)
+        plt.scatter(flaggedDf[timeType].values, flaggedDf['DM'], s=flaggedDf['SNR'], c=flaggedDf['Beam'], cmap=plt.get_cmap('gray'), edgecolors='none', alpha=0.15, rasterized=True)
         unflaggedDf = df[df['Flag']==0]
+        
         print 'Plotting unflagged events', len(unflaggedDf.index)
-        plt.scatter(unflaggedDf['MJD'], unflaggedDf['DM'], s=unflaggedDf['SNR']*scaleFactor, c=unflaggedDf['SNR'], edgecolors='none', alpha=0.7, rasterized=True)
+        plt.scatter(unflaggedDf[timeType].values, unflaggedDf['DM'], s=unflaggedDf['SNR']*scaleFactor, c=unflaggedDf['Beam'], edgecolors='none', alpha=0.5, rasterized=True)
 
     mjdRange = df['MJD'].max() - df['MJD'].min()
-    plt.xlim(df['MJD'].min() - 0.1*mjdRange, df['MJD'].max() + 0.1*mjdRange) # add a bit of buffer
-    plt.ylim(0., max(df['DM'].max(), 10100.))
+    if opts.utc:
+        if opts.utc_start is None: # if no start/end time use the min/max range
+            minUTC = astropy.time.Time(df['MJD'].min() - 0.1*mjdRange, format='mjd').utc.datetime
+            maxUTC = astropy.time.Time(df['MJD'].max() + 0.1*mjdRange, format='mjd').utc.datetime
+        else:
+            minUTC = datetime.datetime.strptime(opts.utc_start, '%Y%m%d_%H%M%S')
+            maxUTC = datetime.datetime.strptime(opts.utc_end, '%Y%m%d_%H%M%S')
+        plt.xlim(minUTC, maxUTC)
+        plt.xlabel('UTC')
+    else:
+        plt.xlim(df['MJD'].min() - 0.1*mjdRange, df['MJD'].max() + 0.1*mjdRange) # add a bit of buffer
+        plt.xlabel('Modified Julian Date')
 
-    plt.colorbar()
-    plt.xlabel('Modified Julian Date')
+    if opts.log:
+        plt.ylim(1., max(df['DM'].max(), 10100.))
+        ax.set_yscale('log')
+    else:
+        plt.ylim(0., max(df['DM'].max(), 10100.))
+
     plt.ylabel('Dispersion Measure')
     plt.title('ALFABURST Events')
 
