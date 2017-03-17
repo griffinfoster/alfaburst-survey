@@ -202,8 +202,9 @@ for f in files:
                 + json.dumps(mjdVals.tolist(), separators=(",",":"))          \
                 + ";"
     # shift the values up and scale them appropriately for better plotting
-    size = 2 * (hist[hist > 0] + 10 + (beamScale * numBeams)                  \
-                - (beamScale * beamID))
+    #size = 2 * (hist[hist > 0] + 10 + (beamScale * numBeams)                  \
+    #            - (beamScale * beamID))
+    size = 2 * (hist[hist > 0] + 10 * beamScale)
     col = cmap(beamID * 255 / numBeams)
     plotLabels.append(r"${\rm Beam~%d}$" % beamID)
     plt.scatter(mjd, dm, s=size, c=col, label=plotLabels[i], edgecolors='none', alpha=0.7)
