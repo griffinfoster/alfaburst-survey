@@ -16,7 +16,7 @@ from StringIO import StringIO # Python 2 specific, use io for Python 3
 
 SCRIPT_DIR = '/home/artemis/Survey/Scripts/' # HARDCODE, see --script_dir option
 EXTRACT_SCRIPT = 'extractBuffer.rb' # HARDCODE
-PLOTTING_SCRIPT = 'dedisperseFil.py' # HARDCODE
+PLOTTING_SCRIPT = 'dedisperse/dedisperseFil.py' # HARDCODE
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -53,6 +53,8 @@ if __name__ == '__main__':
     # Get base filenames for the DAT file and corresponding FILTERBANK file
     datFileDir, datFileName = os.path.split(fullDatFileName)
     filFileDir, fbFileName = os.path.split(fullFilFileName)
+    if datFileDir=='': datFileDir = '.'
+    if filFileDir=='': filFileDir = '.'
     beamID = int(datFileName.split('Beam')[-1][0]) # ASSUMES: file format Beam<BeamID>_...
     tsID = datFileName.split('_dm_')[-1][:-4] # Timestamp ID, useful for finding the corresponding filterbank file
     datFileDir += '/'
@@ -84,7 +86,7 @@ if __name__ == '__main__':
         cmd = scriptDir + EXTRACT_SCRIPT + ' ' + '-b %i'%bufferID + ' ' + filFileDir + fbFileName
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #print proc.communicate() # (stdoutdata, stderrdata)
+            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
         else:
             print cmd
         bufFileName = fbFileName.split('.fil')[0] + '.buffer%i'%bufferID + '.fil'
@@ -112,7 +114,7 @@ if __name__ == '__main__':
         cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -S ' + dedispFig + ' -t %i '%binFactor + filFileDir + bufFileName
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #print proc.communicate() # (stdoutdata, stderrdata)
+            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
         else:
             print cmd
 
@@ -120,10 +122,8 @@ if __name__ == '__main__':
         print 'Removing intermediate files'
         if opts.run:
             os.remove(filFileDir + bufFileName)
-            os.remove(filFileDir + decBufFileName)
         else:
             print 'rm ' + filFileDir + bufFileName
-            print 'rm ' + filFileDir + decBufFileName
 
         # Move figure to OUTPUT_DIR
         if opts.run: shutil.move(filFileDir + dedispFig, outputDir + dedispFig)
