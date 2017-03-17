@@ -80,7 +80,8 @@ puts cmd
 
 # run dd to copy the data to a temp file
 skipBytes = headerBytes + (buffer - 1) * BufferBytes
-cmd = "dd if=#{fileData} of=#{TempDataFile} ibs=1 count=#{BufferBytes} obs=#{BufferBytes} skip=#{skipBytes}"
+#cmd = "dd if=#{fileData} of=#{TempDataFile} ibs=1 count=#{BufferBytes} obs=#{BufferBytes} skip=#{skipBytes}" # works for dd version <8.25
+cmd = "/home/artemis/local/bin/dd if=#{fileData} of=#{TempDataFile} ibs=4096 count=#{BufferBytes} obs=4096 skip=#{skipBytes} iflag=skip_bytes,count_bytes" # works for dd version 8.25+
 puts cmd
 %x[#{cmd}]
 
