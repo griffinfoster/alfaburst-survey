@@ -56,19 +56,24 @@ if __name__ == '__main__':
     datFiles = glob.glob(inputDir+'*.dat')
     if len(datFiles) > 0:
         for fid, fullDatFile in enumerate(datFiles):
-            print '(%i of %i)'%(fid, len(datFiles))
+            print fullDatFile + ' (%i of %i)'%(fid+1, len(datFiles))
 
             # Get base filenames for the DAT file and corresponding FILTERBANK file
             datFileName = os.path.split(fullDatFile)[1]
             beamStr, tsID = datFileName[:-4].split('_dm_')
             beamID = int(beamStr[-1])
-            fbFileName = beamStr + '_fb_' + tsID + '.fil'
+
+            # Sometimes the DAT and FIL files are off by a second, check for this
+            #fbFileName = beamStr + '_fb_' + tsID + '.fil'
+            fbFileNameGlob = beamStr + '_fb_' + tsID[:-2] + '*.fil'
+            fbFileName = os.path.split(glob.glob(inputDir + fbFileNameGlob)[0])[1]
 
             # Generate a dedispersed plot for all buffers in a fil file based on the dat file using generateDedispFigures.py
-            cmd = scriptDir + GENERATOR_SCRIPT + ' --out_dir=' + outputDir + ' ' + inputDir + fbFileName + ' ' + inputDir + datFileName
+            cmd = scriptDir + GENERATOR_SCRIPT + ' --out_dir=' + outputDir + ' ' + inputDir + fbFileName + ' ' + inputDir + datFileName + ' --run'
             if opts.run:
                 proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                #print proc.communicate() # (stdoutdata, stderrdata)
+                (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+                print stdoutdata, stderrdata
             else:
                 print cmd
 
@@ -80,7 +85,7 @@ if __name__ == '__main__':
             cmd = 'scp ' + inputDir + datFileName + ' artemis@abc3:' + abc3Dir
             if opts.run:
                 proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                #print proc.communicate() # (stdoutdata, stderrdata)
+                (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
             else:
                 print cmd
 
