@@ -95,5 +95,13 @@ if __name__ == '__main__':
             else:
                 print 'mv ' + inputDir + datFileName + ' ' + outputDir + datFileName
 
+        # SCP dedispersion figures to abc3
+        cmd = 'scp ' + outputDir + '*.png' + ' artemis@abc3:' + abc3Dir + 'processed/dedisp/'
+        if opts.run:
+            proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+        else:
+            print cmd
+
     print datetime.datetime.now(), 'Finished ALFABURST Post-Processing'
 

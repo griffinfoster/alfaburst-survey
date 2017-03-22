@@ -55,8 +55,6 @@ if __name__ == '__main__':
     # Check for dat files in INPUT_DIR
     datFiles = glob.glob(inputDir+'*.dat')
     while len(datFiles) > 0:
-    #nn = 1
-    #while nn > 0:
 
         # Parse the first dat file to find a time window
         refDatFile = os.path.split(datFiles[0])[1]
@@ -85,23 +83,28 @@ if __name__ == '__main__':
         cmd = scriptDir + DATCONVERT_SCRIPT + ' --output=' + outputDir + csvFile +  ' ' + ' '.join(datsInWindow)
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            proc.communicate() # (stdoutdata, stderrdata)
+            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
         else:
             print cmd
 
-        # Generate DM vs Time Plot (datConverter.py)
+        # Generate DM vs Time Plot (plotDMvsTime.py)
         utcStart = tz.localize(startDateTime).astimezone(pytz.utc)
         utcEnd = tz.localize(endDateTime).astimezone(pytz.utc)
         outFigure = outFileBase + '.png'
         cmd = scriptDir + DMPLOT_SCRIPT + ' --ignore' + ' --nodisplay' + ' --utc' + ' --utc_start=' + utcStart.strftime('%Y%m%d_%H%M%S') + ' --utc_end=' + utcEnd.strftime('%Y%m%d_%H%M%S')  + ' --savefig=' + outputDir + outFigure + ' ' + outputDir + csvFile
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            proc.communicate() # (stdoutdata, stderrdata)
+            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
         else:
             print cmd
 
-        
-        #nn -= 1
+    # Move DAT file to OUTPUT_DIR   
+    cmd = 'mv ' + inputDir + '*.dat ' + outputDir
+    if opts.run:
+        proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+    else:
+        print cmd
 
     print datetime.datetime.now(), 'Finished ALFABURST Status Report Generation'
 
@@ -114,7 +117,7 @@ dailyStatusGen.py: (on abc3)
              datConverter.py: combine all .dat files in an observing night into a dataframe, save dataframe
              plotDMvsTime.py: generate figure
              move plot, dataframe to processed directory
-        * remove dat files
+        * move dat files
         * generate static webpage
         * scp figures and html to webserver
         * run and send statusReport.py
