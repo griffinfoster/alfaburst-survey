@@ -8,6 +8,7 @@ TODO: output tim
 
 import sys,os
 import numpy as np
+import cPickle as pickle
 
 import dedispersion # https://fornax.phys.unm.edu/lwa/trac/browser/trunk/lsl/lsl/misc/dedispersion.py
 import filterbankio # extracted from https://github.com/UCBerkeleySETI/filterbank
@@ -41,6 +42,8 @@ if __name__ == '__main__':
         help='Time window to plot/save, default: None')
     o.add_option('-t', '--time', dest='timeFactor', type='int', default=None,
         help='Average in time by N samples, similar to SIGPROC decimate -t option')
+    o.add_option('-M', '--meta', dest='meta', default=None,
+        help='Metadata pickle file used to print buffer stats, generated in generateDedispFigures.py')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -90,18 +93,21 @@ if __name__ == '__main__':
         fig = plt.figure(figsize=(12,8)) # (width, height)
 
         plt.subplot(3,1,1)
-        imRaw = plt.imshow(np.flipud(waterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap))
+        imRaw = plt.imshow(np.flipud(waterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
         plt.title('Raw')
         plt.ylabel('MHz')
-        cax = fig.add_axes([0.75, 0.865, 0.15, 0.01])
-        fig.colorbar(imRaw, cax=cax, orientation='horizontal')
+        #cax = fig.add_axes([0.75, 0.865, 0.15, 0.01])
+        cax = fig.add_axes([0.75, .95, 0.15, 0.03])
+        cbar = fig.colorbar(imRaw, cax=cax, orientation='horizontal')
+        cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
 
         plt.subplot(3,1,2)
-        imDedisp = plt.imshow(np.flipud(ddwaterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap))
+        imDedisp = plt.imshow(np.flipud(ddwaterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
         plt.title('Dedispersed DM: %.0f'%dm)
         plt.ylabel('MHz')
-        cax = fig.add_axes([0.75, 0.58, 0.15, 0.01])
-        fig.colorbar(imDedisp, cax=cax, orientation='horizontal')
+        #cax = fig.add_axes([0.75, 0.58, 0.15, 0.01])
+        #cbar = fig.colorbar(imDedisp, cax=cax, orientation='horizontal')
+        #cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
         
         plt.subplot(3,1,3)
         plt.plot(tInt*np.arange(waterfall.shape[0]), timeSeries)
@@ -114,6 +120,13 @@ if __name__ == '__main__':
         plt.suptitle(args[0].split('/')[-1])
 
         plt.subplots_adjust(hspace=0.4)
+
+        if not (opts.meta is None):
+            metaData = pickle.load(open(opts.meta, "rb"))
+            tOffset = (float(metaData['maxMJD']) - float(metaData['MJD0'])) * 24. * 60. *60.
+            metaStr = 'Events: %i     DM: (min: %.0f  max: %.0f  mean: %.0f  median: %.0f)     MJD Start: %s\n'%(metaData['nEvents'], metaData['DMmin'], metaData['DMmax'], metaData['DMmean'], metaData['DMmedian'], metaData['MJD0'])
+            metaStr += 'Max SNR: %.2f     MJD: %s    t_offset: %.3f'%(metaData['maxSNR'], metaData['maxMJD'], tOffset)
+            plt.text(0.1, 0.92, metaStr, fontsize=10, transform=fig.transFigure)
 
     if opts.savefig: plt.savefig(opts.savefig)
     if not opts.nodisplay: plt.show()
