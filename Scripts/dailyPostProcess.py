@@ -17,7 +17,7 @@ GENERATOR_SCRIPT = 'generateDedispFigures.py'
 if __name__ == '__main__':
     from optparse import OptionParser
     o = OptionParser()
-    o.set_usage('%prog [options] INPUT_DIR OUTPUT_DIR')
+    o.set_usage('%prog [options] INPUT_DIR PROC_DIR OUTPUT_DIR')
     o.add_option('-S', '--script_dir', dest='scriptDir', default=SCRIPT_DIR,
         help='Directory of scripts (generateDedispFigures.py), default: %s'%SCRIPT_DIR)
     o.add_option('--abc3', dest='abc3Dir', default=ABC3_DIR,
@@ -27,14 +27,16 @@ if __name__ == '__main__':
     o.set_description(__doc__)
     opts, args = o.parse_args(sys.argv[1:])
 
-    # assume input directory and output directory in script call
+    # assume input directory, process directory, and output directory in script call
     inputDir = args[0]
-    outputDir = args[1]
+    procDir = args[1]
+    outputDir = args[2]
     scriptDir = opts.scriptDir
     abc3Dir = opts.abc3Dir
 
     print datetime.datetime.now(), 'Starting ALFABURST Post-Processing'
 
+    # INPUT DIRECTORY: contains the filterbank/dat file pairs
     if os.path.exists(inputDir):
         if not inputDir.endswith('/'): inputDir += '/'
         print 'INPUT DIRECTORY:', inputDir
@@ -42,6 +44,15 @@ if __name__ == '__main__':
         print 'ERROR: INPUT DIRECTORY MISSING'
         exit()
 
+    # PROCESSED DIRECTORY: move filterbank/dat file pairs once processed
+    if os.path.exists(procDir):
+        if not procDir.endswith('/'): procDir += '/'
+        print 'PROCESSED DIRECTORY:', procDir
+    else:
+        print 'ERROR: PROCESSED DIRECTORY MISSING'
+        exit()
+
+    # OUTPUT DIRECTORY: directory which contains the plots and outputs
     if os.path.exists(outputDir):
         if not outputDir.endswith('/'): outputDir += '/'
         print 'OUTPUT DIRECTORY:', outputDir
@@ -77,29 +88,33 @@ if __name__ == '__main__':
             else:
                 print cmd
 
-            # Move FILTERBANK file to OUTPUT_DIR
-            if opts.run: shutil.move(inputDir + fbFileName, outputDir + fbFileName)
-            else: print 'mv ' + inputDir + fbFileName + ' ' + outputDir + fbFileName
+            # Move FILTERBANK file to PROC_DIR
+            if opts.run: shutil.move(inputDir + fbFileName, procDir + fbFileName)
+            else: print 'mv ' + inputDir + fbFileName + ' ' + procDir + fbFileName
 
             # SCP DAT file to abc3
-            cmd = 'scp ' + inputDir + datFileName + ' artemis@abc3:' + abc3Dir
+            cmd = 'scp ' + inputDir + datFileName + ' artemis@abc3:' + abc3Dir + 'input/'
             if opts.run:
                 proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
             else:
                 print cmd
 
-            # Move DAT file to OUTPUT_DIR
+            # Move DAT file to PROC_DIR
             if opts.run:
-                shutil.move(inputDir + datFileName, outputDir + datFileName)
+                shutil.move(inputDir + datFileName, procDir + datFileName)
             else:
-                print 'mv ' + inputDir + datFileName + ' ' + outputDir + datFileName
+                print 'mv ' + inputDir + datFileName + ' ' + procDir + datFileName
 
         # SCP dedispersion figures to abc3
-        cmd = 'scp ' + outputDir + '*.png' + ' artemis@abc3:' + abc3Dir + 'processed/dedisp/'
+        cmd = 'scp ' + outputDir + '*.png' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
         if opts.run:
-            proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+            #proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #(stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+            #print cmd
+            #print stdoutdata
+            #print stderrdata
+            cmdOutput = os.system(cmd)
         else:
             print cmd
 

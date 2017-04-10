@@ -95,10 +95,14 @@ if __name__ == '__main__':
                          'RA': None,
                          'Dec': None
                         }
-        pickle.dump(metaData, open(filFileDir + 'metadata.pkl', 'wb'))
+        metaFileName = fbFileName.split('.fil')[0] + '.buffer%i'%bufferID + '.meta.pkl'
+        if opts.run:
+            pickle.dump(metaData, open(filFileDir + metaFileName, 'wb'))
+        else:
+            print 'writing pickle:', filFileDir + metaFileName
 
         # Extract buffer from FILTERBANK
-        # this produces a new filterbank file named with the buffer, e.g. EXTRACT_SCRIPT -b 9 Beam2_fb_D20161030T154704.fil outputs Beam2_fb_D20161030T154704.buffer9.fil
+        # this produces a new filterbank file named with the buffer, e.g. EXTRACT_SCRIPT -b 9 Beam2_fb_D20161030T154704.fil outputs Beam2_fb_D20161030T154704.buffer9.fil in directory script is run from
         cmd = scriptDir + EXTRACT_SCRIPT + ' ' + '-b %i'%bufferID + ' ' + filFileDir + fbFileName
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -106,6 +110,12 @@ if __name__ == '__main__':
         else:
             print cmd
         bufFileName = fbFileName.split('.fil')[0] + '.buffer%i'%bufferID + '.fil'
+
+        # Move single buffer filterbank to INPUT_DIR
+        if opts.run:
+            shutil.move('./' + bufFileName, filFileDir + bufFileName)
+        else:
+            print 'mv ' + './' + bufFileName + ' ' + filFileDir + bufFileName
 
         ## Decimate the buffer by the binFactor using SIGPROC
         #decBufFileName = bufFileName.split('.fil')[0] + '.d%i'%binFactor + '.fil'
@@ -127,7 +137,7 @@ if __name__ == '__main__':
 
         # Generate dedispersion plot
         dedispFig = bufFileName.split('.fil')[0] + '.d%i'%binFactor + '.png'
-        cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -M ' + filFileDir + 'metadata.pkl' + ' -S ' + dedispFig + ' -t %i '%binFactor + filFileDir + bufFileName
+        cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -M ' + filFileDir + metaFileName + ' -S ' + dedispFig + ' -t %i '%binFactor + filFileDir + bufFileName
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
@@ -138,14 +148,18 @@ if __name__ == '__main__':
         print 'Removing intermediate files'
         if opts.run:
             os.remove(filFileDir + bufFileName)
-            os.remove(filFileDir + 'metadata.pkl')
+            #os.remove(filFileDir + 'metadata.pkl')
         else:
             print 'rm ' + filFileDir + bufFileName
-            print 'rm ' + filFileDir + 'metadata.pkl'
+            #print 'rm ' + filFileDir + 'metadata.pkl'
 
         # Move figure to OUTPUT_DIR
-        if opts.run: shutil.move(filFileDir + dedispFig, outputDir + dedispFig)
-        else: print 'mv ' + filFileDir + dedispFig + ' ' + outputDir + dedispFig
+        if opts.run:
+            shutil.move('./' + dedispFig, outputDir + dedispFig)
+            shutil.move(filFileDir + metaFileName, outputDir + metaFileName)
+        else:
+            print 'mv ' + filFileDir + dedispFig + ' ' + outputDir + dedispFig
+            print 'mv ' + filFileDir + metaFileName + ' ' + outputDir + metaFileName
 
     print datetime.datetime.now(), 'Finished dedispersion plot generation'
 
