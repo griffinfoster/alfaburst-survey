@@ -24,6 +24,11 @@ if __name__ == '__main__':
     #print 'Loading', args[0]
     labelDict = pickle.load(open(args[0], 'rb'))
 
+    validKeys = []
+
     for key, val in labelDict.iteritems():
-        if val in labelList: print key
+        if val in labelList: validKeys.append(key)
+    
+    validKeys.sort(key=lambda x:x.split('_')[2])
+    for key in validKeys: print key
 
