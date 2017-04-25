@@ -44,6 +44,8 @@ if __name__ == '__main__':
         help='Average in time by N samples, similar to SIGPROC decimate -t option')
     o.add_option('-M', '--meta', dest='meta', default=None,
         help='Metadata pickle file used to print buffer stats, generated in generateDedispFigures.py')
+    o.add_option('--write', dest='write', action='store_true',
+        help='Write dedispersed time series to text file')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -60,7 +62,7 @@ if __name__ == '__main__':
             waterfall = waterfall.reshape(waterfall.shape[0]/opts.timeFactor, opts.timeFactor, waterfall.shape[1]).sum(axis=1)
             tInt *= opts.timeFactor
         else:
-            print 'WARNING: %i time samples is NOT divisible by %i, ignoring -t/--time option'%(waterfall.shape[0], opts.timeFactor==0)
+            print 'WARNING: %i time samples is NOT divisible by %i, ignoring -t/--time option'%(waterfall.shape[0], opts.timeFactor)
     ddwaterfall = dedispersion.incoherent(freqsHz, waterfall, tInt, dm, boundary='wrap') # apply dedispersion
 
     timeSeries = np.sum(ddwaterfall, axis=1)
@@ -87,6 +89,12 @@ if __name__ == '__main__':
     timeSeries = timeSeries[startIdx:endIdx]
     waterfall = waterfall[startIdx:endIdx,:]
     ddwaterfall = ddwaterfall[startIdx:endIdx,:]
+
+    if opts.write:
+        # write time series to text file
+        timFn = os.path.basename(args[0]).split('.fil')[0] + '.dm%i'%(int(dm)) + '.dat'
+        print 'Writing dedispered time series to %s'%(timFn)
+        np.savetxt(timFn, timeSeries, fmt='%f')
 
     if not opts.nodisplay or opts.savefig:
 
