@@ -37,6 +37,8 @@ if __name__ == '__main__':
         help='Image extension to label, default: png')
     o.add_option('-i', '--index', dest='index', default=0, type='int',
         help='Starting index, default: 0')
+    o.add_option('--subset', dest='subset', default=None,
+        help='Only show a subset of figures, can be comma separated: unlabel, rfi, sys, interest')
     opts, args = o.parse_args(sys.argv[1:])
 
     imgDir = os.path.join(args[0], '')
@@ -48,7 +50,6 @@ if __name__ == '__main__':
     else:
         labelDict = {}
 
-    # get list of images in directory
     print 'Labels for images in directory:', imgDir
     print 'Keys:\n' + \
             '\tq: quit\n' + \
@@ -57,11 +58,34 @@ if __name__ == '__main__':
             '\ts: System variability\n' + \
             '\tb: back one image\n' + \
             '\tn: next one image\n'
+    # get list of images in directory
     imgFiles = sorted(glob.glob(imgDir + '*.' + opts.ext))
+
+    if not(opts.subset is None):
+        subsetList = opts.subset.split(',')
+        unlabelStatus = 'unlabel' in subsetList
+        rfiStatus = 'rfi' in subsetList
+        sysStatus = 'sys' in subsetList
+        interestStatus = 'interest' in subsetList
+
+        subImgFiles = []
+        for ifn in imgFiles:
+            baseName = os.path.basename(ifn)
+            if baseName in labelDict:
+                if interestStatus and labelDict[baseName] == 0: subImgFiles.append(ifn)
+                elif rfiStatus and labelDict[baseName] == 1: subImgFiles.append(ifn)
+                elif sysStatus and labelDict[baseName] == 2: subImgFiles.append(ifn)
+            elif unlabelStatus: subImgFiles.append(ifn) # added unlabelled figures to subset list
+
+        imgFiles = subImgFiles
+
     nfiles = len(imgFiles)
+    print 'Found %i figures which fit the criteria'%nfiles
+    
     if len(imgFiles) == 0:
         inLoop = False
-        print 'WARNING: no files with extension %s found in directory'%opts.ext
+        print 'WARNING: no files with extension %s found in directory/in the subset catergory'%opts.ext
+        exit()
     else:
         inLoop = True
         idx = opts.index
