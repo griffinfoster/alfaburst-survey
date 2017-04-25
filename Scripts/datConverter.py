@@ -15,11 +15,19 @@ if __name__ == '__main__':
     o.set_description(__doc__)
     o.add_option('-o', '--output', dest='output', default='concat.dat',
         help='Output filename, if name ends in .pkl save as python pickle, else save as CSV, default: concat.dat')
+    o.add_option('-b', '--buffer_output', dest='bufferOutput', default=None,
+            help='Output buffer filename, if name ends in .pkl save as python pickle, default: do not write out buffer file')
     o.add_option('-v', '--verbose', dest='verbose', default=False, action='store_true',
         help='Verbose output')
     opts, args = o.parse_args(sys.argv[1:])
 
     concatDf = None
+
+    if os.path.exists(opts.bufferOutput):
+        if opts.bufferOutput.endswith('pkl'): bufferDf = pd.read_pickle(opts.bufferOutput)
+        else: bufferDf = pd.read_csv(opts.bufferOutput)
+    else:
+        bufferDf = pd.DataFrame(columns=['datfile', 'Beam', 'TSID', 'Buffer', 'MJDstart', 'bestDM', 'bestSNR', 'BinFactor', 'Events', 'DMmax', 'DMmin', 'DMmean', 'DMmedian', 'DMstd', 'SNRmean', 'SNRmedian', 'SNRstd', 'MJDmax', 'MJDmin', 'MJDstd', 'MJDmean', 'MJDmedian', 'Label'])
     for datFile in args:
         if opts.verbose: print datFile
 
@@ -45,7 +53,42 @@ if __name__ == '__main__':
             if concatDf is None: concatDf = df
             else: concatDf = pd.concat([concatDf, df], ignore_index=True) # Concatenate dataframes
 
+            if not(opts.bufferOutput is None):
+                MJDstart = float(bufStr.split(' ')[6])
+                beastDM = int(bufStr.split(' ')[10])
+                bestSNR = float(bufStr.split(' ')[14])
+                BinFactor = int(df['BinFactor'].median())
+                nEvents = len(df)
+                DMmax = df['DM'].max()
+                DMmin = df['DM'].min()
+                DMmean = df['DM'].mean()
+                DMmedian = df['DM'].median()
+                DMstd = df['DM'].std()
+                SNRmean = df['SNR'].mean()
+                SNRmedian = df['SNR'].median()
+                SNRstd = df['SNR'].std()
+                MJDmax = df['MJD'].max()
+                MJDmin = df['MJD'].min()
+                MJDstd = df['MJD'].std()
+                MJDmean = df['MJD'].mean()
+                MJDmedian = df['MJD'].median()
+                bufRow = [os.path.basename(datFile), beamID, tsID, bufferID, MJDstart, beastDM, bestSNR, BinFactor, nEvents, DMmax, DMmin, DMmean, DMmedian, DMstd, SNRmean, SNRmedian, SNRstd, MJDmax, MJDmin, MJDstd, MJDmean, MJDmedian, 0]
+
+                # append row to buffer dataframe
+                bufferDf.loc[len(bufferDf)] = bufRow
+
     if opts.output.endswith('.pkl'):
         concatDf.to_pickle(opts.output) # Save to Pickle file
     else: concatDf.to_csv(opts.output) # Save to CSV file
+
+    if not(opts.bufferOutput is None):
+        bufferDf['Beam'] = bufferDf['Beam'].astype(int)
+        bufferDf['Buffer'] = bufferDf['Buffer'].astype(int)
+        bufferDf['BinFactor'] = bufferDf['BinFactor'].astype(int)
+        bufferDf['Events'] = bufferDf['Events'].astype(int)
+        bufferDf['Label'] = bufferDf['Label'].astype(int)
+
+        if opts.bufferOutput.endswith('.pkl'):
+            bufferDf.to_pickle(opts.bufferOutput) # Save to Pickle file
+        else: bufferDf.to_csv(opts.bufferOutput) # Save to CSV file
 
