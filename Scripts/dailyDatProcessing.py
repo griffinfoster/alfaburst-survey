@@ -16,11 +16,12 @@ tz = pytz.timezone(LOCALTZ)
 SCRIPT_DIR = '/home/artemis/Survey/Scripts/' # HARDCODE, see --script_dir option
 DMPLOT_SCRIPT = 'plotDMvsTime.py'
 DATCONVERT_SCRIPT = 'datConverter.py'
+BUFFER_FILE = '/databk/datProcessing/output/ALFAbuffers.pkl'
 
 if __name__ == '__main__':
     from optparse import OptionParser
     o = OptionParser()
-    o.set_usage('%prog [options] INPUT_DIR OUTPUT_DIR')
+    o.set_usage('%prog [options] INPUT_DIR PROC_DIR OUTPUT_DIR')
     o.add_option('-S', '--script_dir', dest='scriptDir', default=SCRIPT_DIR,
         help='Directory of scripts (generateDedispFigures.py), default: %s'%SCRIPT_DIR)
     o.add_option('--run', dest='run', action='store_true',
@@ -30,7 +31,8 @@ if __name__ == '__main__':
 
     # assume input directory and output directory in script call
     inputDir = args[0]
-    outputDir = args[1]
+    procDir = args[1]
+    outputDir = args[2]
     scriptDir = opts.scriptDir
 
     print datetime.datetime.now(), 'Starting ALFABURST Status Report Generation'
@@ -40,6 +42,14 @@ if __name__ == '__main__':
         print 'INPUT DIRECTORY:', inputDir
     else:
         print 'ERROR: INPUT DIRECTORY MISSING'
+        exit()
+        
+    # PROCESSED DIRECTORY: move dat files once processed
+    if os.path.exists(procDir):
+        if not procDir.endswith('/'): procDir += '/'
+        print 'PROCESSED DIRECTORY:', procDir
+    else:
+        print 'ERROR: PROCESSED DIRECTORY MISSING'
         exit()
 
     if os.path.exists(outputDir):
@@ -73,14 +83,14 @@ if __name__ == '__main__':
         for fullDatFile in datFiles:
             datFile = os.path.split(fullDatFile)[1]
             datDateTime = datetime.datetime.strptime(datFile.split('_dm_')[-1], 'D%Y%m%dT%H%M%S.dat') # datetime in AST local time
-            if startDateTime < datDateTime and datDateTime < endDateTime:
+            if startDateTime < datDateTime and datDateTime < endDateTime: # if DAT file in time window
                 datsInWindow.append(fullDatFile)
                 datFiles.remove(fullDatFile)
         
         # Convert DAT files in the time window into a dataframe (datConverter.py)
         outFileBase = startDateTime.strftime('comb_D%Y%m%dT%H%M%S_AST')
         csvFile = outFileBase + '.csv'
-        cmd = scriptDir + DATCONVERT_SCRIPT + ' --output=' + outputDir + csvFile +  ' ' + ' '.join(datsInWindow)
+        cmd = scriptDir + DATCONVERT_SCRIPT + ' --buffer_output=' + BUFFER_FILE + ' --output=' + outputDir + csvFile +  ' ' + ' '.join(datsInWindow)
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
@@ -98,27 +108,13 @@ if __name__ == '__main__':
         else:
             print cmd
 
-    # Move DAT file to OUTPUT_DIR   
-    cmd = 'mv ' + inputDir + '*.dat ' + outputDir
+    # Move DAT file to _DIR   
+    cmd = 'mv ' + inputDir + '*.dat ' + procDir
     if opts.run:
         proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
     else:
         print cmd
 
-    print datetime.datetime.now(), 'Finished ALFABURST Status Report Generation'
+    print datetime.datetime.now(), 'Finished ALFABURST DAT Processing'
 
-"""
-dailyStatusGen.py: (on abc3)
-     check if new .dat files in DIR
-     if new files:
-         select all dat files in 24 hour window
-         for each time window:
-             datConverter.py: combine all .dat files in an observing night into a dataframe, save dataframe
-             plotDMvsTime.py: generate figure
-             move plot, dataframe to processed directory
-        * move dat files
-        * generate static webpage
-        * scp figures and html to webserver
-        * run and send statusReport.py
-"""
