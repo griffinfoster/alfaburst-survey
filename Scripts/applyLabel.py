@@ -6,6 +6,7 @@ Apply the label outputs from labelImg.py to the buffer database generated in dat
 import sys,os
 import cPickle as pickle
 import pandas as pd
+import datetime
 
 idxLabelMap = ['interesting',   # 0
                 'rfi',          # 1
@@ -35,11 +36,17 @@ if __name__ == '__main__':
 
         for key, val in labelDict.iteritems():
             # ex. 'Beam5_fb_D20160129T195403.buffer6.d64.png': 1
+            # NOTE: the dat anf fb files can be off by 1 second, so we check for this
             TSID = key.split('fb_')[1].split('.')[0]
             beamID = int(key[4])
             bufferID = int(key.split('buffer')[1].split('.')[0])
+            dt = datetime.datetime.strptime(TSID, 'D%Y%m%dT%H%M%S')
+            dtWithOffset = dt - datetime.timedelta(0,1)
+            TSIDwithOffset = dtWithOffset.strftime('D%Y%m%dT%H%M%S')
             if (TSID, beamID, bufferID) in bufDf.index:
                 bufDf = bufDf.set_value((TSID, beamID, bufferID), 'Label', val)
+            elif (TSIDwithOffset, beamID, bufferID) in bufDf.index:
+                bufDf = bufDf.set_value((TSIDwithOffset, beamID, bufferID), 'Label', val)
             else:
                 print 'WARNING: (%s, %i, %i) not in the buffer database'%(TSID, beamID, bufferID)
 
