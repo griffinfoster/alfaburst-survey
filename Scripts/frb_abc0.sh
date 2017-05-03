@@ -57,15 +57,27 @@ do
     fi
 
     if ! ps -p $pids0 > /dev/null; then
-        # restart server
+        # restart pipeline and server
+        kill -9 $pidp0
         cd /data/Survey/Log/beam0
+        numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam0_client.xml &> /data/Survey/Log/beam0/pipeline0.log &
+        pidp0=$!
+
+        sleep 5
+
         numactl -C 12-17 ABServer --config=/home/artemis/Survey/Config/Beam0_server.xml &> /data/Survey/Log/beam0/server0.log &
         pids0=$!
     fi
 
     if ! ps -p $pids1 > /dev/null; then
-        # restart server
+        # restart pipeline and server
+        kill -9 $pidp1
         cd /data/Survey/Log/beam1
+        numactl -C 6-11 -l ABPipeline --config=/home/artemis/Survey/Config/Beam1_client.xml &> /data/Survey/Log/beam1/pipeline1.log &
+        pidp1=$!
+
+        sleep 5
+
         numactl -C 18-23 ABServer --config=/home/artemis/Survey/Config/Beam1_server.xml &> /data/Survey/Log/beam1/server1.log &
         pids1=$!
     fi

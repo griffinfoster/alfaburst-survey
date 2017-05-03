@@ -36,15 +36,21 @@ while true
 do
     if ! ps -p $pidp0 > /dev/null; then
         # restart pipeline
-        cd /data/Survey/Log/beam0
-        numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam0_client.xml &> /data/Survey/Log/beam0/pipeline0.log &
+        cd /data/Survey/Log/beam6
+        numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam6_client.xml &> /data/Survey/Log/beam6/pipeline0.log &
         pidp0=$!
     fi
 
     if ! ps -p $pids0 > /dev/null; then
-        # restart server
-        cd /data/Survey/Log/beam0
-        numactl -C 12-17 ABServer --config=/home/artemis/Survey/Config/Beam0_server.xml &> /data/Survey/Log/beam0/server0.log &
+        # restart pipeline and server
+        cd /data/Survey/Log/beam6
+        kill -9 $pidp0
+        numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam6_client.xml &> /data/Survey/Log/beam6/pipeline0.log &
+        pidp0=$!
+
+        sleep 5
+
+        numactl -C 12-17 ABServer --config=/home/artemis/Survey/Config/Beam6_server.xml &> /data/Survey/Log/beam6/server0.log &
         pids0=$!
     fi
     
