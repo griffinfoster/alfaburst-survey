@@ -7,12 +7,12 @@ import sys,os
 import numpy as np
 import pandas as pd
 import glob
-from astropy.time import Time
+#from astropy.time import Time
 from astropy import units
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
-H5_DIR = '/home/griffin/data/serendip6/sandbox/'
+H5_DIR = '/home/griffin/data/serendip6/h5/'
 
 def printPointing(pointingSeries, raType='str', decType='str'):
     print '(RA: %s, DEC: %s)'%(raType, decType)
@@ -60,14 +60,21 @@ if __name__ == '__main__':
 
     if opts.unix:
         unixTime = int(args[0])
+        jd = (float(unixTime) / 86400.) + 2440587.5
+        mjd = jd - 2400000.5
     else:
         # convert to unix time
-        mjd = Time(float(args[0]), format='mjd')
-        print 'UNIX TIME:', mjd.unix
-        unixTime = int(mjd.unix) 
+        #mjd = Time(float(args[0]), format='mjd')
+        #print 'UNIX TIME:', mjd.unix
+        #unixTime = int(mjd.unix) 
+    
         # simple conversion, should be equivalent to astropy.time conversion as leap seconds are not important when converting between MJD and unix time
-        #jd = mjd + 2400000.5
-        #unixTime = int((jd - 2440587.5) * 86400)
+        mjd = float(args[0])
+        jd = mjd + 2400000.5
+        unixTime = int((jd - 2440587.5) * 86400)
+
+    print 'UNIX TIME:', unixTime
+    print 'MJD:', mjd
 
     # find the correct file ID based on unixtime
     derH5files = glob.glob(opts.h5dir + '*derived.h5')
@@ -87,7 +94,7 @@ if __name__ == '__main__':
 
     print '\nUnix Time:', unixTime
 
-    validH5fn = fnPrefix + 'derived.h5'
+    validH5fn = opts.h5dir + fnPrefix + 'derived.h5'
     if os.path.exists(validH5fn):
         df = pd.read_hdf(validH5fn)
         # RAx stored as decimal Hours
@@ -96,14 +103,14 @@ if __name__ == '__main__':
     else:
         print 'WARN: no derived pointing HDF5 file %s found, skipping'%validH5fn
 
-    validH5fn = fnPrefix + 'if1.h5'
+    validH5fn = opts.h5dir + fnPrefix + 'if1.h5'
     if os.path.exists(validH5fn):
         df = pd.read_hdf(validH5fn)
         print '\nIF1SYNHZ: %f GHz IF1RFFRQ: %f GHz'%(df.loc[unixTime]['IF1SYNHZ']/1e9, df.loc[unixTime]['IF1RFFRQ']/1e9)
     else:
         print 'WARN: no IF1 HDF5 file %s found, skipping'%validH5fn
 
-    validH5fn = fnPrefix + 'if2.h5'
+    validH5fn = opts.h5dir + fnPrefix + 'if2.h5'
     if os.path.exists(validH5fn):
         df = pd.read_hdf(validH5fn)
         print '\nIF2SYNHZ: %f GHz IF2ALFON: %i\n'%(df.loc[unixTime]['IF2SYNHZ']/1e9, int(df.loc[unixTime]['IF2ALFON']))
