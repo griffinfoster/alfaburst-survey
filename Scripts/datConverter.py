@@ -72,7 +72,7 @@ if __name__ == '__main__':
                 MJDstd = df['MJD'].std()
                 MJDmean = df['MJD'].mean()
                 MJDmedian = df['MJD'].median()
-                bufRow = [os.path.basename(datFile), beamID, tsID, bufferID, MJDstart, beastDM, bestSNR, BinFactor, nEvents, DMmax, DMmin, DMmean, DMmedian, DMstd, SNRmean, SNRmedian, SNRstd, MJDmax, MJDmin, MJDstd, MJDmean, MJDmedian, 0]
+                bufRow = [os.path.basename(datFile), beamID, tsID, bufferID, MJDstart, beastDM, bestSNR, BinFactor, nEvents, DMmax, DMmin, DMmean, DMmedian, DMstd, SNRmean, SNRmedian, SNRstd, MJDmax, MJDmin, MJDstd, MJDmean, MJDmedian, -1]
 
                 # append row to buffer dataframe
                 bufferDf.loc[len(bufferDf)] = bufRow
