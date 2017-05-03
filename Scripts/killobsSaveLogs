@@ -1,4 +1,5 @@
 top -b -n1 >> /data/Survey/Log/killlog
+pkill -9 -f frb_abc
 killall -9  ABServer
 killall -9  ABPipeline
 python /home/artemis/Survey/Scripts/saveLogs.py
