@@ -62,7 +62,12 @@ if __name__ == '__main__':
             waterfall = waterfall.reshape(waterfall.shape[0]/opts.timeFactor, opts.timeFactor, waterfall.shape[1]).sum(axis=1)
             tInt *= opts.timeFactor
         else:
-            print 'WARNING: %i time samples is NOT divisible by %i, ignoring -t/--time option'%(waterfall.shape[0], opts.timeFactor)
+            print 'WARNING: %i time samples is NOT divisible by %i, zero-padding spectrum to usable size'%(waterfall.shape[0], opts.timeFactor)
+            zeros = np.zeros((opts.timeFactor - (waterfall.shape[0] % opts.timeFactor), waterfall.shape[1]))
+            waterfall = np.concatenate((waterfall, zeros))
+            waterfall = waterfall.reshape(waterfall.shape[0]/opts.timeFactor, opts.timeFactor, waterfall.shape[1]).sum(axis=1)
+            tInt *= opts.timeFactor
+
     ddwaterfall = dedispersion.incoherent(freqsHz, waterfall, tInt, dm, boundary='wrap') # apply dedispersion
 
     timeSeries = np.sum(ddwaterfall, axis=1)
