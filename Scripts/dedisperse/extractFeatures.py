@@ -196,10 +196,11 @@ if __name__ == '__main__':
     metaData['pixels'] = pixelizeSpectrogram(waterfall)
 
     #######################
-    print metaData.keys()
 
     if not (opts.meta is None):
         pickle.dump(metaData, open(opts.meta, "wb"))
+    else:
+        print metaData
 
     #######################
     #waterfall = waterfall[startIdx:endIdx,:]

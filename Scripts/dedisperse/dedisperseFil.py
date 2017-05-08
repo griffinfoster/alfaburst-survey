@@ -46,6 +46,8 @@ if __name__ == '__main__':
         help='Metadata pickle file used to print buffer stats, generated in generateDedispFigures.py')
     o.add_option('--write', dest='write', action='store_true',
         help='Write dedispersed time series to text file')
+    o.add_option('--zerodm', dest='plotZeroDM', action='store_true',
+        help='Also plot the 0-DM time series')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -89,14 +91,16 @@ if __name__ == '__main__':
             print 'Warning: time window (-w) in conjunction with start time (-s) results in a window extending beyond the filterbank file, clipping to maximum size'
             endIdx = waterfall.shape[0]
 
-    timeSeries = np.sum(ddwaterfall, axis=1)
+    timeSeries = np.sum(waterfall, axis=1)
+    ddTimeSeries = np.sum(ddwaterfall, axis=1)
 
     timeSeries = timeSeries[startIdx:endIdx]
+    ddTimeSeries = ddTimeSeries[startIdx:endIdx]
     waterfall = waterfall[startIdx:endIdx,:]
     ddwaterfall = ddwaterfall[startIdx:endIdx,:]
 
-    #normTimeSeries = (timeSeries - np.mean(timeSeries))/np.std(timeSeries)
     normTimeSeries = timeSeries / (waterfall.shape[1] * opts.timeFactor)
+    normDDTimeSeries = ddTimeSeries / (waterfall.shape[1] * opts.timeFactor)
 
     if opts.write:
         # write time series to text file
@@ -112,7 +116,6 @@ if __name__ == '__main__':
         imRaw = plt.imshow(np.flipud(waterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
         plt.title('Raw')
         plt.ylabel('MHz')
-        #cax = fig.add_axes([0.75, 0.865, 0.15, 0.01])
         cax = fig.add_axes([0.75, .95, 0.15, 0.03])
         cbar = fig.colorbar(imRaw, cax=cax, orientation='horizontal')
         cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
@@ -121,13 +124,10 @@ if __name__ == '__main__':
         imDedisp = plt.imshow(np.flipud(ddwaterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
         plt.title('Dedispersed DM: %.0f'%dm)
         plt.ylabel('MHz')
-        #cax = fig.add_axes([0.75, 0.58, 0.15, 0.01])
-        #cbar = fig.colorbar(imDedisp, cax=cax, orientation='horizontal')
-        #cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
         
         plt.subplot(3,1,3)
-        #plt.plot(tInt*np.arange(waterfall.shape[0]), timeSeries)
-        plt.plot(tInt*np.arange(waterfall.shape[0]), normTimeSeries)
+        if opts.plotZeroDM: plt.plot(tInt*np.arange(waterfall.shape[0]), normTimeSeries, 'b', alpha=0.25)
+        plt.plot(tInt*np.arange(waterfall.shape[0]), normDDTimeSeries, 'k', alpha=0.8)
         plt.xlim(0, tInt*timeSeries.shape[0])
         plt.title('Time Series')
         plt.xlabel('seconds')
