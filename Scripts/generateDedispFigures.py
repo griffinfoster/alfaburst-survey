@@ -18,6 +18,7 @@ from StringIO import StringIO # Python 2 specific, use io for Python 3
 SCRIPT_DIR = '/home/artemis/Survey/Scripts/' # HARDCODE, see --script_dir option
 EXTRACT_SCRIPT = 'extractBuffer.rb' # HARDCODE
 PLOTTING_SCRIPT = 'dedisperse/dedisperseFil.py' # HARDCODE
+FEATURE_SCRIPT = 'dedisperse/extractFeatures.py' # HARDCODE
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -137,7 +138,15 @@ if __name__ == '__main__':
 
         # Generate dedispersion plot
         dedispFig = bufFileName.split('.fil')[0] + '.d%i'%binFactor + '.png'
-        cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -M ' + filFileDir + metaFileName + ' -S ' + dedispFig + ' -t %i '%binFactor + filFileDir + bufFileName
+        cmd =  scriptDir + PLOTTING_SCRIPT + ' -d %f'%bufBestDM + ' --nodisplay' + ' -M ' + filFileDir + metaFileName + ' -S ' + dedispFig + ' -t %i '%binFactor + ' --zerodm ' + filFileDir + bufFileName
+        if opts.run:
+            proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+        else:
+            print cmd
+
+        # Extract Features, write to buffer pickle file
+        cmd =  scriptDir + EXTRACT_SCRIPT + ' -d %f'%bufBestDM + ' -M ' + filFileDir + metaFileName + ' -t %i '%binFactor + filFileDir + bufFileName
         if opts.run:
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
