@@ -12,6 +12,10 @@ from astropy import units
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 
+import datetime
+import pytz
+LOCALTZ = 'America/Puerto_Rico' # Arecibo time zone
+
 H5_DIR = '/home/griffin/data/serendip6/h5/'
 
 def printPointing(pointingSeries, raType='str', decType='str'):
@@ -75,6 +79,11 @@ if __name__ == '__main__':
 
     print 'UNIX TIME:', unixTime
     print 'MJD:', mjd
+
+    utc = pytz.utc.localize(datetime.datetime.fromtimestamp(int(unixTime)))
+    print 'UTC:', utc.strftime('%Y-%m-%d %H:%M:%S')
+    local = utc.astimezone(pytz.timezone(LOCALTZ))
+    print 'ARECIBO:', local.strftime('%Y-%m-%d %H:%M:%S')
 
     # find the correct file ID based on unixtime
     derH5files = glob.glob(opts.h5dir + '*derived.h5')
