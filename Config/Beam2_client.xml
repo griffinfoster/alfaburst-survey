@@ -27,7 +27,7 @@
         </pipelineConfig>
 
         <modules>
-            <RFI_Clipper active="true" channelRejectionRMS="5.0" spectrumRejectionRMS="6.0">
+            <RFI_Clipper active="true" channelRejectionRMS="5.0" spectrumRejectionRMS="10.0">
                 <zeroDMing active="true" />
                 <BandPassData file="/home/artemis/Survey/Config/alfa.bp" />
                 <Band matching="false" />
