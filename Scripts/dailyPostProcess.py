@@ -118,5 +118,12 @@ if __name__ == '__main__':
         else:
             print cmd
 
+        # SCP pickle files to abc3
+        cmd = 'scp ' + outputDir + '*.pkl' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
+        if opts.run:
+            cmdOutput = os.system(cmd)
+        else:
+            print cmd
+
     print datetime.datetime.now(), 'Finished ALFABURST Post-Processing'
 

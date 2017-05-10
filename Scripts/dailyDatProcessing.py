@@ -64,28 +64,39 @@ if __name__ == '__main__':
 
     # Check for dat files in INPUT_DIR
     datFiles = glob.glob(inputDir+'*.dat')
+    if len(datFiles) > 0: datFiles = sorted(datFiles, key=lambda x: x.split('_')[-1])
     while len(datFiles) > 0:
 
         # Parse the first dat file to find a time window
         refDatFile = os.path.split(datFiles[0])[1]
         refDateTime = datetime.datetime.strptime(refDatFile.split('_dm_')[-1], 'D%Y%m%dT%H%M%S.dat') # reference datetime in AST local time
+        ## Define a time window: 12:59 DAY N-1 to 13:00 DAY N
+        #if refDateTime.hour < 13:
+        #    startDateTime = refDateTime - datetime.timedelta(hours = refDateTime.hour, minutes = refDateTime.minute, seconds=refDateTime.second) - datetime.timedelta(hours = 11)
+        #else:
+        #    startDateTime = refDateTime - datetime.timedelta(hours = refDateTime.hour, minutes = refDateTime.minute, seconds=refDateTime.second) + datetime.timedelta(hours = 13)
+        #endDateTime = startDateTime + datetime.timedelta(days = 2)
+
+        startDateTime = datetime.datetime(*refDateTime.timetuple()[:3])
+        endDateTime = datetime.datetime(*refDateTime.timetuple()[:3]) + datetime.timedelta(days = 1)
         # Define a time window: 12:59 DAY N-1 to 13:00 DAY N
         if refDateTime.hour < 13:
-            startDateTime = refDateTime - datetime.timedelta(hours = refDateTime.hour, minutes = refDateTime.minute, seconds=refDateTime.second) - datetime.timedelta(hours = 11)
+            startDateTime -= datetime.timedelta(hours = 11)
+            endDateTime -= datetime.timedelta(hours = 11)
         else:
-            startDateTime = refDateTime - datetime.timedelta(hours = refDateTime.hour, minutes = refDateTime.minute, seconds=refDateTime.second) + datetime.timedelta(hours = 13)
-        endDateTime = startDateTime + datetime.timedelta(days = 1)
+            startDateTime += datetime.timedelta(hours = 13)
+            endDateTime += datetime.timedelta(hours = 13)
         print 'Time Window:', startDateTime, '---', endDateTime
         
         # Find all DAT files in the time window
-        datsInWindow = [datFiles[0]]
-        datFiles.remove(datFiles[0])
+        datsInWindow = []
         for fullDatFile in datFiles:
             datFile = os.path.split(fullDatFile)[1]
             datDateTime = datetime.datetime.strptime(datFile.split('_dm_')[-1], 'D%Y%m%dT%H%M%S.dat') # datetime in AST local time
-            if startDateTime < datDateTime and datDateTime < endDateTime: # if DAT file in time window
+            if startDateTime <= datDateTime and datDateTime < endDateTime: # if DAT file in time window
                 datsInWindow.append(fullDatFile)
-                datFiles.remove(fullDatFile)
+        # remove datsInWindow from datFiles list
+        datFiles = [dfn for dfn in datFiles if dfn not in datsInWindow]
         
         # Convert DAT files in the time window into a dataframe (datConverter.py)
         outFileBase = startDateTime.strftime('comb_D%Y%m%dT%H%M%S_AST')
