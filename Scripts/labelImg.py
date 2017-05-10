@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Load images from a directory and provide a simple interface to label the images, write labels to a pickle file
+Load images with wildcards or from a directory and provide a simple interface to label the images, write labels to a pickle file
 """
 
 import sys,os
@@ -13,6 +13,10 @@ import cPickle as pickle
 idxLabelMap = ['interesting',   # 0
                 'rfi',          # 1
                 'systematics']  # 2
+
+idxLabelDict = {'interesting' : 0,  # 0
+                'rfi' : 1,          # 1
+                'systematics' : 2}  # 2
 
 def getchar():
     # https://gist.github.com/jasonrdsouza/1901709
@@ -29,7 +33,7 @@ def getchar():
 if __name__ == '__main__':
     from optparse import OptionParser
     o = OptionParser()
-    o.set_usage('%prog [options] IMAGE_DIRECTORY')
+    o.set_usage('%prog [options] IMAGE_DIRECTORY/IMAGE')
     o.set_description(__doc__)
     o.add_option('--dbfile', dest='dbfile', default='imgLabel.pkl',
         help='CSV file of image labels, default: imgLabel.pkl')
@@ -39,9 +43,17 @@ if __name__ == '__main__':
         help='Starting index, default: 0')
     o.add_option('--subset', dest='subset', default=None,
         help='Only show a subset of figures, can be comma separated: unlabel, rfi, sys, interest')
+    o.add_option('-a', '--auto', dest='auto', default=None,
+        help='Auto assign a label to unlabelled images')
     opts, args = o.parse_args(sys.argv[1:])
 
-    imgDir = os.path.join(args[0], '')
+    if os.path.isdir(args[0]):
+        imgDir = os.path.join(args[0], '')
+        # get list of images in directory
+        print 'Labels for images in directory:', imgDir
+        imgFiles = sorted(glob.glob(imgDir + '*.' + opts.ext))
+    else:
+        imgFiles = args
 
     # load dbfile if exists, else create an empty dict
     if os.path.exists(opts.dbfile):
@@ -50,16 +62,18 @@ if __name__ == '__main__':
     else:
         labelDict = {}
 
-    print 'Labels for images in directory:', imgDir
     print 'Keys:\n' + \
             '\tq: quit\n' + \
             '\ti: interesting event\n' + \
             '\tr: RFI event\n' + \
             '\ts: System variability\n' + \
+            '\tu: Unlabel\n' + \
             '\tb: back one image\n' + \
             '\tn: next one image\n'
-    # get list of images in directory
-    imgFiles = sorted(glob.glob(imgDir + '*.' + opts.ext))
+
+    if opts.auto in idxLabelMap: autoLabel = opts.auto
+    else: autoLabel = None
+    print 'Auto Assign:', autoLabel
 
     if not(opts.subset is None):
         subsetList = opts.subset.split(',')
@@ -107,7 +121,11 @@ if __name__ == '__main__':
         if baseName in labelDict:
             print 'Current Label:', idxLabelMap[labelDict[baseName]]
         else:
-            print 'Unlabelled'
+            if autoLabel is None:
+                print 'Unlabelled'
+            else:
+                print 'Auto Label:', autoLabel
+                labelDict[baseName] = idxLabelDict[autoLabel]
 
         ch = getchar()
         if ch=='q':
@@ -134,13 +152,16 @@ if __name__ == '__main__':
 
         elif ch=='i': # label: interesting
             print 'Label: interesting'
-            labelDict[baseName] = 0
+            labelDict[baseName] = idxLabelDict['interesting']
 
         elif ch=='r': # label: RFI
             print 'Label: RFI'
-            labelDict[baseName] = 1
+            labelDict[baseName] = idxLabelDict['rfi']
 
         elif ch=='s': # label: system variability
             print 'Label: system variability'
-            labelDict[baseName] = 2
+            labelDict[baseName] = idxLabelDict['systematics']
+
+        elif ch=='u': # remove label
+            del labelDict[baseName]
 
