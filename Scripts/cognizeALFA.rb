@@ -21,6 +21,12 @@ sigSrcGregorian = (%x[redis-cli -h serendip6 hget SCRAM:IF2 IF2SIGSR]).to_i
 # 1 for ALFA enabled
 recALFAEnabled = (%x[redis-cli -h serendip6 hget SCRAM:IF2 IF2ALFON]).to_i
 
+# check that the RX turret is in the correct position for ALFA
+# should be 26.64 deg +/- 0.25
+recTurretAngle = (%x[redis-cli -h serendip6 hget SCRAM:TT TTTURDEG]).to_f
+angPostALFA = 26.64
+angleTol = 1.0
+
 # for testing
 #sigSrcGregorian = 0
 #recALFAEnabled = 1
@@ -35,7 +41,7 @@ if debug
 end
 
 # ALFA is enabled
-if 0 == sigSrcGregorian and 1 == recALFAEnabled
+if 0 == sigSrcGregorian and 1 == recALFAEnabled and (recTurretAngle - angPostALFA).abs <= angleTol
     # get the RF centre frequency
     rfCenFreq = (%x[redis-cli -h serendip6 hget SCRAM:IF1 IF1RFFRQ]).to_f
 
@@ -106,7 +112,7 @@ else
     end
 end
 
-if 1 == sigSrcGregorian or 0 == recALFAEnabled
+if 1 == sigSrcGregorian or 0 == recALFAEnabled or (recTurretAngle - angPostALFA).abs >= angleTol
     idx = %x[ps -ef | grep FRBsearch.sh].index("bash")
     if idx != nil
         if !debug
