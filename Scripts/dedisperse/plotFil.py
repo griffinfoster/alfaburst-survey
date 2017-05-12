@@ -36,6 +36,8 @@ if __name__ == '__main__':
         help='Time window to plot/save, default: None')
     o.add_option('-t', '--time', dest='timeFactor', type='int', default=None,
         help='Average in time by N samples, similar to SIGPROC decimate -t option')
+    o.add_option('-f', '--freq', dest='freqFactor', type='int', default=1,
+        help='Average in freq by N samples')
     opts, args = o.parse_args(sys.argv[1:])
 
     fil = filterbankio.Filterbank(args[0])
@@ -57,6 +59,15 @@ if __name__ == '__main__':
             waterfall = np.concatenate((waterfall, zeros))
             waterfall = waterfall.reshape(waterfall.shape[0]/opts.timeFactor, opts.timeFactor, waterfall.shape[1]).sum(axis=1)
             tInt *= opts.timeFactor
+
+    if not opts.freqFactor is None: # average down by N frequency channels, waterfall.shape[1] must be divisible by N
+        if waterfall.shape[1] % opts.freqFactor==0:
+            print waterfall.shape
+            waterfall = waterfall.reshape(waterfall.shape[0], waterfall.shape[1]/opts.freqFactor, opts.freqFactor).sum(axis=2)
+            ddwaterfall = ddwaterfall.reshape(ddwaterfall.shape[0], ddwaterfall.shape[1]/opts.freqFactor, opts.freqFactor).sum(axis=2)
+            freqsHz = freqsHz[::opts.freqFactor]
+        else:
+            print 'WARNING: %i frequency channels is NOT divisible by %i, ignoring option'%(waterfall.shape[1], opts.freqFactor)
 
     # Select time subsets to plot and save to file
     if opts.start_time is None:

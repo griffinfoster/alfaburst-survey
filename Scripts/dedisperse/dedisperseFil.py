@@ -42,12 +42,16 @@ if __name__ == '__main__':
         help='Time window to plot/save, default: None')
     o.add_option('-t', '--time', dest='timeFactor', type='int', default=1,
         help='Average in time by N samples, similar to SIGPROC decimate -t option')
+    o.add_option('-f', '--freq', dest='freqFactor', type='int', default=1,
+        help='Average in freq by N samples')
     o.add_option('-M', '--meta', dest='meta', default=None,
         help='Metadata pickle file used to print buffer stats, generated in generateDedispFigures.py')
     o.add_option('--write', dest='write', action='store_true',
         help='Write dedispersed time series to text file')
     o.add_option('--zerodm', dest='plotZeroDM', action='store_true',
         help='Also plot the 0-DM time series')
+    o.add_option('--dmcurve', dest='dmcurve', action='store_true',
+        help='Plot the DM curve over the 0-DM spectrogram')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -61,7 +65,7 @@ if __name__ == '__main__':
 
     if np.isnan(waterfall).any(): waterfall = np.nan_to_num(waterfall).astype('float64')
 
-    if not opts.timeFactor is None: # average down by N time samples, waterfall.shape[0] must be divisible by N
+    if not opts.timeFactor is None: # average down by N time samples
         if waterfall.shape[0] % opts.timeFactor==0:
             waterfall = waterfall.reshape(waterfall.shape[0]/opts.timeFactor, opts.timeFactor, waterfall.shape[1]).sum(axis=1)
             tInt *= opts.timeFactor
@@ -73,6 +77,14 @@ if __name__ == '__main__':
             tInt *= opts.timeFactor
 
     ddwaterfall = dedispersion.incoherent(freqsHz, waterfall, tInt, dm, boundary='wrap') # apply dedispersion
+
+    if not opts.freqFactor is None: # average down by N frequency channels, waterfall.shape[1] must be divisible by N
+        if waterfall.shape[1] % opts.freqFactor==0:
+            waterfall = waterfall.reshape(waterfall.shape[0], waterfall.shape[1]/opts.freqFactor, opts.freqFactor).sum(axis=2)
+            ddwaterfall = ddwaterfall.reshape(ddwaterfall.shape[0], ddwaterfall.shape[1]/opts.freqFactor, opts.freqFactor).sum(axis=2)
+            freqsHz = freqsHz[::opts.freqFactor]
+        else:
+            print 'WARNING: %i frequency channels is NOT divisible by %i, ignoring option'%(waterfall.shape[1], opts.freqFactor)
 
     # Select time subsets to plot and save to file
     if opts.start_time is None:
@@ -114,6 +126,15 @@ if __name__ == '__main__':
 
         plt.subplot(3,1,1)
         imRaw = plt.imshow(np.flipud(waterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
+
+        if opts.dmcurve: # plot DM curve
+            fStop = freqsHz[-1] / 1e6
+            fStart = freqsHz / 1e6
+            deltat = 4.15 * (10.**6.) * ( (fStart**(-2.) - (fStop**(-2.)))) * dm # ms
+            deltat /= 1e3 # seconds
+            plt.plot(deltat, freqsHz / 1e6, 'w--')
+            plt.ylim(fil.freqs[0], fil.freqs[-1])
+            plt.xlim(0, tInt*waterfall.shape[0])
         plt.title('Raw')
         plt.ylabel('MHz')
         cax = fig.add_axes([0.75, .95, 0.15, 0.03])
@@ -121,7 +142,7 @@ if __name__ == '__main__':
         cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
 
         plt.subplot(3,1,2)
-        imDedisp = plt.imshow(np.flipud(ddwaterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
+        imDedisp = plt.imshow(np.flipud(ddwaterfall.T), extent=(0, tInt*ddwaterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
         plt.title('Dedispersed DM: %.0f'%dm)
         plt.ylabel('MHz')
         
