@@ -38,10 +38,19 @@ if __name__ == '__main__':
         content = open(datFile).read()
         content = content.split('# ------')[-1].split('Done')[:-1] # drop header and split at the end of buffer line
         nbuffer = len(content)
+        print datFile
         for buf in content:
             events = buf.split('#')
             bufStr = events[-1] # Get the string with the buffer ID
-            bufferID = int(bufStr.split(' ')[3][1:]) # ex: ' Written buffer :2 | MJDstart: 57637.763946759 | Best DM: 10039 | Max SNR: 12.042928695679'
+            # ex. ' Written buffer :2 | MJDstart: 57637.763946759 | Best DM: 10039 | Max SNR: 12.042928695679'
+            # some times (mainly in 2015) the dat has a corrupt buffer, best just to skip it
+            bufferIDStr = bufStr.split(' ')[3][1:]
+            try:
+                bufferID = int(bufferIDStr)
+            except ValueError:
+                print 'Found Bad Buffer, skipping'
+                continue
+
             events = events[0] # remove buffer string
             df = pd.read_csv(StringIO(events), sep=',', names=['MJD', 'DM', 'SNR', 'BinFactor']).dropna()
             
@@ -55,7 +64,7 @@ if __name__ == '__main__':
 
             if not(opts.bufferOutput is None):
                 MJDstart = float(bufStr.split(' ')[6])
-                beastDM = int(bufStr.split(' ')[10])
+                bestDM = int(float(bufStr.split(' ')[10]))
                 bestSNR = float(bufStr.split(' ')[14])
                 BinFactor = int(df['BinFactor'].median())
                 nEvents = len(df)
@@ -72,7 +81,7 @@ if __name__ == '__main__':
                 MJDstd = df['MJD'].std()
                 MJDmean = df['MJD'].mean()
                 MJDmedian = df['MJD'].median()
-                bufRow = [os.path.basename(datFile), beamID, tsID, bufferID, MJDstart, beastDM, bestSNR, BinFactor, nEvents, DMmax, DMmin, DMmean, DMmedian, DMstd, SNRmean, SNRmedian, SNRstd, MJDmax, MJDmin, MJDstd, MJDmean, MJDmedian, -1]
+                bufRow = [os.path.basename(datFile), beamID, tsID, bufferID, MJDstart, bestDM, bestSNR, BinFactor, nEvents, DMmax, DMmin, DMmean, DMmedian, DMstd, SNRmean, SNRmedian, SNRstd, MJDmax, MJDmin, MJDstd, MJDmean, MJDmedian, -1]
 
                 # append row to buffer dataframe
                 bufferDf.loc[len(bufferDf)] = bufRow

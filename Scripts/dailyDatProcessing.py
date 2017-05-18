@@ -103,8 +103,10 @@ if __name__ == '__main__':
         csvFile = outFileBase + '.csv'
         cmd = scriptDir + DATCONVERT_SCRIPT + ' --buffer_output=' + BUFFER_FILE + ' --output=' + outputDir + csvFile +  ' ' + ' '.join(datsInWindow)
         if opts.run:
+            print cmd
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+            print stderrdata
         else:
             print cmd
 
@@ -114,16 +116,20 @@ if __name__ == '__main__':
         outFigure = outFileBase + '.png'
         cmd = scriptDir + DMPLOT_SCRIPT + ' --ignore' + ' --nodisplay' + ' --utc' + ' --utc_start=' + utcStart.strftime('%Y%m%d_%H%M%S') + ' --utc_end=' + utcEnd.strftime('%Y%m%d_%H%M%S')  + ' --savefig=' + outputDir + outFigure + ' ' + outputDir + csvFile
         if opts.run:
+            print cmd
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+            print stderrdata
         else:
             print cmd
 
     # Move DAT file to _DIR   
     cmd = 'mv ' + inputDir + '*.dat ' + procDir
     if opts.run:
+        print cmd
         proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+        print stderrdata
     else:
         print cmd
 

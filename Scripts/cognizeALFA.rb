@@ -59,6 +59,7 @@ if 0 == sigSrcGregorian and 1 == recALFAEnabled and (recTurretAngle - angPostALF
     # check if data acquisition is in progress, if not start it
     idx = %x[ps -ef | grep FRBsearch.sh].index("bash")
     if nil == idx
+        %x[echo "ALFABURST Observing Started --- $(date)" | mail -s "ALFABURST Observing Started --- $(date)" griffin.foster@gmail.com]
         if !debug
             print "#{dateTime}: LST: #{siderealTime}: ALFA status: "
         end
@@ -104,6 +105,7 @@ if 0 == sigSrcGregorian and 1 == recALFAEnabled and (recTurretAngle - angPostALF
             %x[echo "#{rfCenFreq}" > /home/artemis/Survey/Log/LastRFCenFreq.tmp]
             %x[echo "Start: #{Time.now.to_i}" >> /home/artemis/Survey/Log/surveytime.log]
             %x[/home/artemis/Survey/Scripts/FRBsearch.sh]
+            %x[echo "ALFABURST Observing Restarted (frequency change) --- $(date)" | mail -s "ALFABURST Observing Restarted" griffin.foster@gmail.com]
         end
     end
 else
@@ -120,6 +122,7 @@ if 1 == sigSrcGregorian or 0 == recALFAEnabled or (recTurretAngle - angPostALFA)
         end
         print "ALFA is down. Stopping data acquisition.\n"
         %x[echo "Stop: #{Time.now.to_i}" >> /home/artemis/Survey/Log/surveytime.log]
+        %x[echo "ALFABURST Observing Stopped --- $(date)" | mail -s "ALFABURST Observing Stopped --- $(date)" griffin.foster@gmail.com]
         %x[/home/artemis/Survey/Scripts/killobs_SSH]
     end
 end

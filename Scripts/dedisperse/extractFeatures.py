@@ -111,8 +111,10 @@ if __name__ == '__main__':
         nNegCount = arr[arr < arrMedian].size
         nPosPct = nPosCount / float(arr.size)
         nNegPct = nNegCount / float(arr.size)
+        if np.isclose(arrMedian, 0.): meanMedianRatio = 0.
+        else: meanMedianRatio = np.abs(arrMean / arrMedian)
         return { 'mean': arrMean, 'median': arrMedian, 'std': arr.std(), 'min': arr.min(), 'max': arr.max(),
-                 'meanMedianRatio': np.abs(arrMean / arrMedian), 'maxMinRatio': np.abs(arr.max() / arr.min()),
+                 'meanMedianRatio': meanMedianRatio, 'maxMinRatio': np.abs(arr.max() / arr.min()),
                  'posCount': nPosCount, 'negCount': nNegCount, 'posPct': nPosPct, 'negPct': nNegPct }
 
     metaData['globalTimeStats'] = globalStats(timeSeries)
@@ -125,14 +127,17 @@ if __name__ == '__main__':
         maxVals = np.zeros(nseg)
         meanVals = np.zeros(nseg)
         stdVals = np.zeros(nseg)
+        snrVals = np.zeros(nseg)
 
         for sid in np.arange(nseg):
             minVals[sid] = arr[segSize*sid:segSize*(sid+1)].min()
             maxVals[sid] = arr[segSize*sid:segSize*(sid+1)].max()
             meanVals[sid] = arr[segSize*sid:segSize*(sid+1)].mean()
             stdVals[sid] = np.std(arr[segSize*sid:segSize*(sid+1)])
-        
-        return { 'min': minVals, 'max': maxVals, 'mean': meanVals, 'std': stdVals, 'snr': maxVals / stdVals }
+            if np.isclose(stdVals[sid], 0): snrVals[sid] = 0.
+            else: snrVals[sid] = maxVals[sid] / stdVals[sid]
+
+        return { 'min': minVals, 'max': maxVals, 'mean': meanVals, 'std': stdVals, 'snr': snrVals }
 
     metaData['windTimeStats'] = windowedStats(timeSeries)
     metaData['windDedispTimeStats'] = windowedStats(ddTimeSeries)
@@ -195,67 +200,8 @@ if __name__ == '__main__':
 
     metaData['pixels'] = pixelizeSpectrogram(waterfall)
 
-    #######################
-
     if not (opts.meta is None):
         pickle.dump(metaData, open(opts.meta, "wb"))
     else:
         print metaData
-
-    #######################
-    #waterfall = waterfall[startIdx:endIdx,:]
-    #ddwaterfall = ddwaterfall[startIdx:endIdx,:]
-
-    ##normTimeSeries = (timeSeries - np.mean(timeSeries))/np.std(timeSeries)
-    #normTimeSeries = timeSeries / (waterfall.shape[1] * opts.timeFactor)
-    ##normTimeSeries = ddTimeSeries / (waterfall.shape[1] * opts.timeFactor)
-
-    #if opts.write:
-    #    # write time series to text file
-    #    timFn = os.path.basename(args[0]).split('.fil')[0] + '.dm%i'%(int(dm)) + '.dat'
-    #    print 'Writing dedispered time series to %s'%(timFn)
-    #    np.savetxt(timFn, timeSeries, fmt='%f')
-
-    #if not opts.nodisplay or opts.savefig:
-
-    #    fig = plt.figure(figsize=(12,8)) # (width, height)
-
-    #    plt.subplot(3,1,1)
-    #    imRaw = plt.imshow(np.flipud(waterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
-    #    plt.title('Raw')
-    #    plt.ylabel('MHz')
-    #    #cax = fig.add_axes([0.75, 0.865, 0.15, 0.01])
-    #    cax = fig.add_axes([0.75, .95, 0.15, 0.03])
-    #    cbar = fig.colorbar(imRaw, cax=cax, orientation='horizontal')
-    #    cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
-
-    #    plt.subplot(3,1,2)
-    #    imDedisp = plt.imshow(np.flipud(ddwaterfall.T), extent=(0, tInt*waterfall.shape[0], fil.freqs[0], fil.freqs[-1]), aspect='auto', cmap=plt.get_cmap(opts.cmap), interpolation='nearest')
-    #    plt.title('Dedispersed DM: %.0f'%dm)
-    #    plt.ylabel('MHz')
-    #    #cax = fig.add_axes([0.75, 0.58, 0.15, 0.01])
-    #    #cbar = fig.colorbar(imDedisp, cax=cax, orientation='horizontal')
-    #    #cbar.ax.set_xticklabels(cbar.ax.get_xticklabels(), rotation='vertical', fontsize=8)
-    #    
-    #    plt.subplot(3,1,3)
-    #    #plt.plot(tInt*np.arange(waterfall.shape[0]), timeSeries)
-    #    plt.plot(tInt*np.arange(waterfall.shape[0]), normTimeSeries)
-    #    plt.xlim(0, tInt*timeSeries.shape[0])
-    #    plt.title('Time Series')
-    #    plt.xlabel('seconds')
-    #    plt.ylabel('Amp')
-
-    #    plt.suptitle(args[0].split('/')[-1])
-
-    #    plt.subplots_adjust(hspace=0.4)
-
-    #    if not (opts.meta is None):
-    #        metaData = pickle.load(open(opts.meta, "rb"))
-    #        tOffset = (float(metaData['maxMJD']) - float(metaData['MJD0'])) * 24. * 60. *60.
-    #        metaStr = 'Events: %i     DM: (min: %.0f  max: %.0f  mean: %.0f  median: %.0f)     MJD Start: %s\n'%(metaData['nEvents'], metaData['DMmin'], metaData['DMmax'], metaData['DMmean'], metaData['DMmedian'], metaData['MJD0'])
-    #        metaStr += 'Max SNR: %.2f     MJD: %s    t_offset: %.3f'%(metaData['maxSNR'], metaData['maxMJD'], tOffset)
-    #        plt.text(0.1, 0.92, metaStr, fontsize=10, transform=fig.transFigure)
-
-    #if opts.savefig: plt.savefig(opts.savefig)
-    #if not opts.nodisplay: plt.show()
 
