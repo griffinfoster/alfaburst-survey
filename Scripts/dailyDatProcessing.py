@@ -123,15 +123,15 @@ if __name__ == '__main__':
         else:
             print cmd
 
-    # Move DAT file to _DIR   
-    cmd = 'mv ' + inputDir + '*.dat ' + procDir
-    if opts.run:
-        print cmd
-        proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
-        print stderrdata
-    else:
-        print cmd
+    ## Move DAT file to _DIR   
+    #cmd = 'mv ' + inputDir + '*.dat ' + procDir
+    #if opts.run:
+    #    print cmd
+    #    proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #    (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+    #    print stderrdata
+    #else:
+    #    print cmd
 
     print datetime.datetime.now(), 'Finished ALFABURST DAT Processing'
 
