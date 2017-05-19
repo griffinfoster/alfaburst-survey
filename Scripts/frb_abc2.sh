@@ -17,6 +17,8 @@ do
     sleep 2
 done
 
+echo "$(date) : FRB Search pipeline started" >> /data/Survey/Log/frb_abc2.log
+
 # initialize pipelines
 cd /data/Survey/Log/beam4
 numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam4_client.xml &> /data/Survey/Log/beam4/pipeline0.log &
@@ -44,6 +46,7 @@ while true
 do
     if ! ps -p $pidp0 > /dev/null; then
         # restart pipeline
+        echo "$(date) : ABpipeline Beam 0 process died, restarting" >> /data/Survey/Log/frb_abc2.log
         cd /data/Survey/Log/beam4
         numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam4_client.xml &> /data/Survey/Log/beam4/pipeline0.log &
         pidp0=$!
@@ -51,6 +54,7 @@ do
 
     if ! ps -p $pidp1 > /dev/null; then
         # restart pipeline
+        echo "$(date) : ABpipeline Beam 1 process died, restarting" >> /data/Survey/Log/frb_abc2.log
         cd /data/Survey/Log/beam5
         numactl -C 6-11 -l ABPipeline --config=/home/artemis/Survey/Config/Beam5_client.xml &> /data/Survey/Log/beam5/pipeline1.log &
         pidp1=$!
@@ -58,6 +62,7 @@ do
 
     if ! ps -p $pids0 > /dev/null; then
         # restart pipeline and server
+        echo "$(date) : ABServer Beam 0 process died, restarting" >> /data/Survey/Log/frb_abc2.log
         cd /data/Survey/Log/beam4
         kill -9 $pidp0
         numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam4_client.xml &> /data/Survey/Log/beam4/pipeline0.log &
@@ -71,6 +76,7 @@ do
 
     if ! ps -p $pids1 > /dev/null; then
         # restart pipeline and server
+        echo "$(date) : ABServer Beam 1 process died, restarting" >> /data/Survey/Log/frb_abc2.log
         cd /data/Survey/Log/beam5
         kill -9 $pidp1
         numactl -C 6-11 -l ABPipeline --config=/home/artemis/Survey/Config/Beam5_client.xml &> /data/Survey/Log/beam5/pipeline1.log &

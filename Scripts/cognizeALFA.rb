@@ -21,6 +21,12 @@ sigSrcGregorian = (%x[redis-cli -h serendip6 hget SCRAM:IF2 IF2SIGSR]).to_i
 # 1 for ALFA enabled
 recALFAEnabled = (%x[redis-cli -h serendip6 hget SCRAM:IF2 IF2ALFON]).to_i
 
+# check that the RX turret is in the correct position for ALFA
+# should be 26.64 deg +/- 0.25
+recTurretAngle = (%x[redis-cli -h serendip6 hget SCRAM:TT TTTURDEG]).to_f
+angPostALFA = 26.64
+angleTol = 1.0
+
 # for testing
 #sigSrcGregorian = 0
 #recALFAEnabled = 1
@@ -35,7 +41,7 @@ if debug
 end
 
 # ALFA is enabled
-if 0 == sigSrcGregorian and 1 == recALFAEnabled
+if 0 == sigSrcGregorian and 1 == recALFAEnabled and (recTurretAngle - angPostALFA).abs <= angleTol
     # get the RF centre frequency
     rfCenFreq = (%x[redis-cli -h serendip6 hget SCRAM:IF1 IF1RFFRQ]).to_f
 
@@ -53,6 +59,7 @@ if 0 == sigSrcGregorian and 1 == recALFAEnabled
     # check if data acquisition is in progress, if not start it
     idx = %x[ps -ef | grep FRBsearch.sh].index("bash")
     if nil == idx
+        %x[echo "ALFABURST Observing Started --- $(date)" | mail -s "ALFABURST Observing Started --- $(date)" griffin.foster@gmail.com]
         if !debug
             print "#{dateTime}: LST: #{siderealTime}: ALFA status: "
         end
@@ -98,6 +105,7 @@ if 0 == sigSrcGregorian and 1 == recALFAEnabled
             %x[echo "#{rfCenFreq}" > /home/artemis/Survey/Log/LastRFCenFreq.tmp]
             %x[echo "Start: #{Time.now.to_i}" >> /home/artemis/Survey/Log/surveytime.log]
             %x[/home/artemis/Survey/Scripts/FRBsearch.sh]
+            %x[echo "ALFABURST Observing Restarted (frequency change) --- $(date)" | mail -s "ALFABURST Observing Restarted" griffin.foster@gmail.com]
         end
     end
 else
@@ -106,7 +114,7 @@ else
     end
 end
 
-if 1 == sigSrcGregorian or 0 == recALFAEnabled
+if 1 == sigSrcGregorian or 0 == recALFAEnabled or (recTurretAngle - angPostALFA).abs >= angleTol
     idx = %x[ps -ef | grep FRBsearch.sh].index("bash")
     if idx != nil
         if !debug
@@ -114,6 +122,7 @@ if 1 == sigSrcGregorian or 0 == recALFAEnabled
         end
         print "ALFA is down. Stopping data acquisition.\n"
         %x[echo "Stop: #{Time.now.to_i}" >> /home/artemis/Survey/Log/surveytime.log]
+        %x[echo "ALFABURST Observing Stopped --- $(date)" | mail -s "ALFABURST Observing Stopped --- $(date)" griffin.foster@gmail.com]
         %x[/home/artemis/Survey/Scripts/killobs_SSH]
     end
 end

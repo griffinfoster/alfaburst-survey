@@ -17,6 +17,8 @@ do
     sleep 2
 done
 
+echo "$(date) : FRB Search pipeline started" >> /data/Survey/Log/frb_abc3.log
+
 # initialize pipelines
 cd /data/Survey/Log/beam6
 numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam6_client.xml &> /data/Survey/Log/beam6/pipeline0.log &
@@ -36,6 +38,7 @@ while true
 do
     if ! ps -p $pidp0 > /dev/null; then
         # restart pipeline
+        echo "$(date) : ABpipeline Beam 0 process died, restarting" >> /data/Survey/Log/frb_abc3.log
         cd /data/Survey/Log/beam6
         numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam6_client.xml &> /data/Survey/Log/beam6/pipeline0.log &
         pidp0=$!
@@ -43,6 +46,7 @@ do
 
     if ! ps -p $pids0 > /dev/null; then
         # restart pipeline and server
+        echo "$(date) : ABServer Beam 0 process died, restarting" >> /data/Survey/Log/frb_abc3.log
         cd /data/Survey/Log/beam6
         kill -9 $pidp0
         numactl -C 0-5 -l ABPipeline --config=/home/artemis/Survey/Config/Beam6_client.xml &> /data/Survey/Log/beam6/pipeline0.log &

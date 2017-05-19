@@ -67,7 +67,7 @@ if __name__ == '__main__':
     datFiles = glob.glob(inputDir+'*.dat')
     if len(datFiles) > 0:
         for fid, fullDatFile in enumerate(datFiles):
-            print fullDatFile + ' (%i of %i)'%(fid+1, len(datFiles))
+            print fullDatFile + ' (%i of %i)'%(fid+1, len(datFiles)), datetime.datetime.now()
 
             # Get base filenames for the DAT file and corresponding FILTERBANK file
             datFileName = os.path.split(fullDatFile)[1]
@@ -84,7 +84,6 @@ if __name__ == '__main__':
             if opts.run:
                 proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
-                print stdoutdata, stderrdata
             else:
                 print cmd
 
@@ -114,6 +113,13 @@ if __name__ == '__main__':
             #print cmd
             #print stdoutdata
             #print stderrdata
+            cmdOutput = os.system(cmd)
+        else:
+            print cmd
+
+        # SCP pickle files to abc3
+        cmd = 'scp ' + outputDir + '*.pkl' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
+        if opts.run:
             cmdOutput = os.system(cmd)
         else:
             print cmd

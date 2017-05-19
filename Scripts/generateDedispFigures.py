@@ -85,7 +85,9 @@ if __name__ == '__main__':
 
         # Write some buffer meta data to a pickle file to be printed in the dedispersion figure
         mjdStart = bufStr.split(' ')[6]
-        metaData =      {'nEvents': len(df.index),
+        metaData =      {'filterbank': fbFileName,
+                         'dat': datFileName,
+                         'nEvents': len(df.index),
                          'MJD0': mjdStart,
                          'DMmin': df['DM'].min(),
                          'DMmax': df['DM'].max(),
@@ -146,10 +148,12 @@ if __name__ == '__main__':
             print cmd
 
         # Extract Features, write to buffer pickle file
-        cmd =  scriptDir + EXTRACT_SCRIPT + ' -d %f'%bufBestDM + ' -M ' + filFileDir + metaFileName + ' -t %i '%binFactor + filFileDir + bufFileName
+        cmd =  scriptDir + FEATURE_SCRIPT + ' -d %f'%bufBestDM + ' -M ' + filFileDir + metaFileName + ' -t %i '%binFactor + filFileDir + bufFileName
         if opts.run:
+            print cmd
             proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+            print stdoutdata, stderrdata
         else:
             print cmd
 
