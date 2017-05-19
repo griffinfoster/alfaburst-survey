@@ -12,13 +12,14 @@ import cPickle as pickle
 
 idxLabelDict = { 0 : 'Interesting, follow up',
                  9 : 'Known Pulsar',
-                 1 : 'Wide-band, long-duration in time clipped RFI',
-                 2 : 'Systematic int/float overflow',
-                 3 : 'Poor spectra replacement across a signifcant portion of the spectrogram',
-                 4 : 'Poor spectra replacement across a minority of the spectrogram',
-                 5 : 'Error in spectra captue or replacement',
-                 6 : 'Arecibo RFI Monitoring',
-                 7 : 'Unclipped RFI/Noise' }
+                 1 : 'Unclipped RFI/Noise',
+                 2 : 'Wide-band, long-duration in time clipped RFI (2016+)',
+                 3 : 'Wide-band, short-duration in time clipped RFI (2016+)',
+                 4 : 'Wide-band, short duration clipped RFI (2015)',
+                 5 : 'Sharp bandpass transition',
+                 6 : 'Wide-band, bursty clipped RFI (2015)',
+                 7 : 'Error in spectra captue or replacement',
+                 8 : 'Systematic int/float overflow'}
 
 labelStrList = map(str, idxLabelDict)
 
