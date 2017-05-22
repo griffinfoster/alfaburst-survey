@@ -64,7 +64,6 @@ if __name__ == '__main__':
         if waterfall.shape[1] % opts.freqFactor==0:
             print waterfall.shape
             waterfall = waterfall.reshape(waterfall.shape[0], waterfall.shape[1]/opts.freqFactor, opts.freqFactor).sum(axis=2)
-            ddwaterfall = ddwaterfall.reshape(ddwaterfall.shape[0], ddwaterfall.shape[1]/opts.freqFactor, opts.freqFactor).sum(axis=2)
             freqsHz = freqsHz[::opts.freqFactor]
         else:
             print 'WARNING: %i frequency channels is NOT divisible by %i, ignoring option'%(waterfall.shape[1], opts.freqFactor)
