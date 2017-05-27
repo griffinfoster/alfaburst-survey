@@ -124,7 +124,11 @@ if __name__ == '__main__':
 
     if not opts.nodisplay or opts.savefig:
 
-        if opts.dark: plt.style.use('dark_background')
+        if opts.dark:
+            plt.style.use('dark_background')
+            lineColor = 'w'
+        else:
+            lineColor = 'k'
 
         fig = plt.figure(figsize=(12,8)) # (width, height)
 
@@ -152,7 +156,7 @@ if __name__ == '__main__':
         
         plt.subplot(3,1,3)
         if opts.plotZeroDM: plt.plot(tInt*np.arange(waterfall.shape[0]), normTimeSeries, 'b', alpha=0.25)
-        plt.plot(tInt*np.arange(waterfall.shape[0]), normDDTimeSeries, 'k', alpha=0.8)
+        plt.plot(tInt*np.arange(waterfall.shape[0]), normDDTimeSeries, lineColor, alpha=0.8)
         plt.xlim(0, tInt*timeSeries.shape[0])
         plt.title('Time Series')
         plt.xlabel('seconds')

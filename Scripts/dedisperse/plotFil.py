@@ -38,6 +38,8 @@ if __name__ == '__main__':
         help='Average in time by N samples, similar to SIGPROC decimate -t option')
     o.add_option('-f', '--freq', dest='freqFactor', type='int', default=1,
         help='Average in freq by N samples')
+    o.add_option('--dark', dest='dark', action='store_true',
+        help='Plot with a dark background style')
     opts, args = o.parse_args(sys.argv[1:])
 
     fil = filterbankio.Filterbank(args[0])
@@ -88,6 +90,9 @@ if __name__ == '__main__':
     waterfall = waterfall[startIdx:endIdx]
 
     if not opts.nodisplay or opts.savefig:
+
+        if opts.dark:
+            plt.style.use('dark_background')
 
         fig = plt.figure(figsize=(12,8)) # (width, height)
 
