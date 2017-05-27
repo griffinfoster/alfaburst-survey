@@ -52,6 +52,8 @@ if __name__ == '__main__':
         help='Also plot the 0-DM time series')
     o.add_option('--dmcurve', dest='dmcurve', action='store_true',
         help='Plot the DM curve over the 0-DM spectrogram')
+    o.add_option('--dark', dest='dark', action='store_true',
+        help='Plot with a dark background style')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -121,6 +123,8 @@ if __name__ == '__main__':
         np.savetxt(timFn, timeSeries, fmt='%f')
 
     if not opts.nodisplay or opts.savefig:
+
+        if opts.dark: plt.style.use('dark_background')
 
         fig = plt.figure(figsize=(12,8)) # (width, height)
 
