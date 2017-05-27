@@ -12,6 +12,7 @@ from astropy import units
 from astropy.coordinates import Angle
 from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import datetime
 import pytz
@@ -63,6 +64,8 @@ if __name__ == '__main__':
         help='RA print mode: \'str\': DD:MM:SS.SSSS, \'deg\': decimal degrees, \'rad\': decimal radians, default: str')
     o.add_option('-w', '--window', dest='window', default=60, type='int',
         help='Window in seconds to plot around event')
+    o.add_option('-S', '--savefig', dest='savefig', default=None,
+        help='Save figure to filename')
     opts, args = o.parse_args(sys.argv[1:])
 
     if opts.unix:
@@ -106,6 +109,9 @@ if __name__ == '__main__':
 
     print '\nUnix Time:', unixTime
 
+    sns.set(style="ticks", context="talk")
+    plt.style.use("dark_background")
+
     fig = plt.figure(figsize=(16,12)) # (width, height)
 
     validH5fn = opts.h5dir + fnPrefix + 'derived.h5'
@@ -118,7 +124,7 @@ if __name__ == '__main__':
         # Plot: RA vs Dec
         plt.subplot(3,3,1)
         for bid in range(7): plt.plot(derivedDf['RA%i'%bid], derivedDf['DEC%i'%bid], label='Beam%i'%bid)
-        plt.axvline(df.loc[unixTime]['RA0'])
+        plt.axvline(df.loc[unixTime]['RA0'], color='w', ls='--')
         plt.xlabel('RA')
         plt.ylabel('DEC')
         plt.legend(fontsize='x-small')
@@ -126,7 +132,7 @@ if __name__ == '__main__':
         # Plot: RA vs time
         plt.subplot(3,3,2)
         for bid in range(7): plt.plot(derivedDf.index, derivedDf['RA%i'%bid], label='Beam%i'%bid)
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.ylabel('RA')
         plt.xlabel('Unix Time')
         plt.legend(fontsize='x-small')
@@ -135,7 +141,7 @@ if __name__ == '__main__':
         # Plot: DEC vs time
         plt.subplot(3,3,3)
         for bid in range(7): plt.plot(derivedDf.index, derivedDf['DEC%i'%bid], label='Beam%i'%bid)
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.ylabel('DEC')
         plt.xlabel('Unix Time')
         plt.legend(fontsize='x-small')
@@ -160,7 +166,7 @@ if __name__ == '__main__':
         plt.plot(if1Df.index, if1Df['IF1SYNHZ']/1e6, label='IF1SYNHZ')
         plt.plot(if1Df.index, if1Df['IF1RFFRQ']/1e6, label='IF1RFFRQ')
         plt.plot(if2Df.index, if2Df['IF2SYNHZ']/1e6, label='IF2SYNHZ')
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.ylabel('Freq. (MHz)')
         plt.xlabel('Unix Time')
         plt.legend(fontsize='x-small')
@@ -170,7 +176,7 @@ if __name__ == '__main__':
         plt.subplot(3,3,5)
         plt.plot(if1Df.index, if1Df['IF1ALFFB'], label='IF1ALFFB')
         plt.plot(if2Df.index, if2Df['IF2ALFON'], label='IF2ALFON')
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.ylabel('Status')
         plt.xlabel('Unix Time')
         plt.legend(fontsize='x-small')
@@ -196,7 +202,7 @@ if __name__ == '__main__':
         # Plot: Encoding vs time
         plt.subplot(3,3,6)
         plt.plot(ttDf.index, ttDf['TTTURENC'], label='TTTURENC')
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.xlabel('Unix Time')
         plt.ylabel('Encoding Index')
         plt.legend(fontsize='x-small')
@@ -205,7 +211,7 @@ if __name__ == '__main__':
         # Plot: Turret angle vs time
         plt.subplot(3,3,7)
         plt.plot(ttDf.index, ttDf['TTTURDEG'], label='TTTURDEG')
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.xlabel('Unix Time')
         plt.ylabel('Turret Angle')
         plt.legend(fontsize='x-small')
@@ -231,7 +237,7 @@ if __name__ == '__main__':
         plt.subplot(3,3,8)
         plt.plot(alfashmDf.index, alfashmDf['ALFBIAS1'], label='ALFBIAS1')
         plt.plot(alfashmDf.index, alfashmDf['ALFBIAS2'], label='ALFBIAS2')
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.xlabel('Unix Time')
         plt.ylabel('Bias')
         plt.xlim(alfashmDf.index[0], alfashmDf.index[-1])
@@ -240,7 +246,7 @@ if __name__ == '__main__':
         # Plot: Turret angle vs time
         plt.subplot(3,3,9)
         plt.plot(alfashmDf.index, alfashmDf['ALFMOPOS'], label='ALFMOPOS')
-        plt.axvline(unixTime)
+        plt.axvline(unixTime, color='w', ls='--')
         plt.xlabel('Unix Time')
         plt.ylabel('ALFMOPOS')
         plt.xlim(alfashmDf.index[0], alfashmDf.index[-1])
@@ -248,6 +254,8 @@ if __name__ == '__main__':
 
     else:
         print 'WARN: no ALFASHM HDF5 file %s found, skipping'%validH5fn
-
+    
+    plt.tight_layout()
+    if opts.savefig: plt.savefig(opts.savefig)
     plt.show()
     
