@@ -105,24 +105,24 @@ if __name__ == '__main__':
             else:
                 print 'mv ' + inputDir + datFileName + ' ' + procDir + datFileName
 
-        # SCP dedispersion figures to abc3
-        cmd = 'scp ' + outputDir + '*.png' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
-        if opts.run:
-            #proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            #(stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
-            #print cmd
-            #print stdoutdata
-            #print stderrdata
-            cmdOutput = os.system(cmd)
-        else:
-            print cmd
+        ## SCP dedispersion figures to abc3
+        #cmd = 'scp ' + outputDir + '*.png' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
+        #if opts.run:
+        #    #proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #    #(stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+        #    #print cmd
+        #    #print stdoutdata
+        #    #print stderrdata
+        #    cmdOutput = os.system(cmd)
+        #else:
+        #    print cmd
 
-        # SCP pickle files to abc3
-        cmd = 'scp ' + outputDir + '*.pkl' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
-        if opts.run:
-            cmdOutput = os.system(cmd)
-        else:
-            print cmd
+        ## SCP pickle files to abc3
+        #cmd = 'scp ' + outputDir + '*.pkl' + ' artemis@abc3:' + abc3Dir + 'dedisp/'
+        #if opts.run:
+        #    cmdOutput = os.system(cmd)
+        #else:
+        #    print cmd
 
     print datetime.datetime.now(), 'Finished ALFABURST Post-Processing'
 
