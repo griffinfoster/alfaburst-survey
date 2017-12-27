@@ -11,14 +11,6 @@ import cPickle as pickle
 import dedispersion # https://fornax.phys.unm.edu/lwa/trac/browser/trunk/lsl/lsl/misc/dedispersion.py
 import filterbankio # extracted from https://github.com/UCBerkeleySETI/filterbank
 
-## Check if $DISPLAY is set (for handling plotting on remote machines with no X-forwarding)
-#if os.environ.has_key('DISPLAY'):
-#    import matplotlib.pyplot as plt
-#else:
-#    import matplotlib
-#    matplotlib.use('Agg')
-#    import matplotlib.pyplot as plt
-
 if __name__ == '__main__':
     from optparse import OptionParser
     o = OptionParser()
@@ -26,24 +18,12 @@ if __name__ == '__main__':
     o.set_description(__doc__)
     o.add_option('-d', '--dm', dest='dm', default=0., type='float',
         help='Despersion Measure to correct, default: 0.')
-    #o.add_option('--nodisplay', dest='nodisplay', action='store_true',
-    #    help='Do not display figures')
-    #o.add_option('-S', '--savefig', dest='savefig', default=None,
-    #    help='Save figure to filename')
     o.add_option('-v', '--verbose', dest='verbose', action='store_true',
         help='Verbose output')
-    #o.add_option('--cmap', dest='cmap', default='magma',
-    #    help='plotting colormap, default: magma')
-    #o.add_option('-s', '--start', dest='start_time', type='float', default=None,
-    #    help='Start time to plot/save in seconds, default: None')
-    #o.add_option('-w', '--window', dest='time_window', type='float', default=None,
-    #    help='Time window to plot/save, default: None')
     o.add_option('-t', '--time', dest='timeFactor', type='int', default=2,
         help='Average in time by N samples, similar to SIGPROC decimate -t option')
     o.add_option('-M', '--meta', dest='meta', default=None,
         help='Metadata pickle file used to print buffer stats, generated in generateDedispFigures.py')
-    #o.add_option('--write', dest='write', action='store_true',
-    #    help='Write dedispersed time series to text file')
     opts, args = o.parse_args(sys.argv[1:])
 
     dm = opts.dm
@@ -74,26 +54,8 @@ if __name__ == '__main__':
 
     ddwaterfall = dedispersion.incoherent(freqsHz, waterfall, tInt, dm, boundary='wrap') # apply dedispersion
 
-    ## Select time subsets to plot and save to file
-    #if opts.start_time is None:
-    #    startIdx = 0
-    #else:
-    #    startIdx = int(opts.start_time / tInt)
-    #    if startIdx > waterfall.shape[0]:
-    #        print 'Error: start time (-s) is beyond the maximum time (%f s) of the filterbank, exiting'%(waterfall.shape[0] * tInt)
-    #        exit()
-
-    #if opts.time_window is None:
-    #    endIdx = waterfall.shape[0]
-    #else:
-    #    endIdx = startIdx + int(opts.time_window / tInt)
-    #    if endIdx > waterfall.shape[0]:
-    #        print 'Warning: time window (-w) in conjunction with start time (-s) results in a window extending beyond the filterbank file, clipping to maximum size'
-    #        endIdx = waterfall.shape[0]
-
     ddTimeSeries = np.sum(ddwaterfall, axis=1)
     timeSeries = np.sum(waterfall, axis=1)
-    #timeSeries = timeSeries[startIdx:endIdx]
 
     if not (opts.meta is None):
         metaData = pickle.load(open(opts.meta, "rb"))
@@ -102,7 +64,6 @@ if __name__ == '__main__':
 
     #######################
     # Feature Extraction
-
     def globalStats(arr):
         """Global Statistics of an array"""
         arrMedian = np.median(arr)

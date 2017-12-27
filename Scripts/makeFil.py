@@ -130,7 +130,16 @@ for i in range(nPkts - skip):
         # compute Stokes I
         #(XXacc + YYacc).tofile(fid, sep="")
         #(XXacc + YYacc)[768:1792].astype(np.float32).tofile(fid, sep="")
+
+        #(XXacc + YYacc)[3584:4096].astype(np.uint16).tofile(fid, sep="")
+        #(XXacc + YYacc)[3072:3584].astype(np.uint16).tofile(fid, sep="")
+        #(XXacc + YYacc)[2560:3072].astype(np.uint16).tofile(fid, sep="")
+        #(XXacc + YYacc)[2048:2560].astype(np.uint16).tofile(fid, sep="")
+        #(XXacc + YYacc)[1536:2048].astype(np.uint16).tofile(fid, sep="")
         (XXacc + YYacc)[1024:1536].astype(np.uint16).tofile(fid, sep="")
+        #(XXacc + YYacc)[512:1024].astype(np.uint16).tofile(fid, sep="")
+        #(XXacc + YYacc)[0:512].astype(np.uint16).tofile(fid, sep="")
+        
         #(XXacc + YYacc).astype(np.float32).tofile(fid, sep="")
 
 ## remove the weird high values in channel 0
