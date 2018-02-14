@@ -11,8 +11,10 @@ import glob
 import datetime
 
 SCRIPT_DIR = '/home/artemis/Survey/Scripts/' # HARDCODE, see --script_dir option
-ABC3_DIR = '/databk/datProcessing/' # HARDCODE, see --abc3 option
+#ABC3_DIR = '/databk/datProcessing/' # HARDCODE, see --abc3 option
 GENERATOR_SCRIPT = 'generateDedispFigures.py'
+BUFFER_SCRIPT = 'datConv2Buff.py'
+BUFFER_FILE = '/databk/pipeline/output2/ALFAbuffers.pkl'
 
 if __name__ == '__main__':
     from optparse import OptionParser
@@ -20,8 +22,10 @@ if __name__ == '__main__':
     o.set_usage('%prog [options] INPUT_DIR PROC_DIR OUTPUT_DIR')
     o.add_option('-S', '--script_dir', dest='scriptDir', default=SCRIPT_DIR,
         help='Directory of scripts (generateDedispFigures.py), default: %s'%SCRIPT_DIR)
-    o.add_option('--abc3', dest='abc3Dir', default=ABC3_DIR,
-        help='Directory on ABC3 to store DAT files, default: %s'%ABC3_DIR)
+    #o.add_option('--abc3', dest='abc3Dir', default=ABC3_DIR,
+    #    help='Directory on ABC3 to store DAT files, default: %s'%ABC3_DIR)
+    o.add_option('-B', '--buffer', dest='bufferFile', default=BUFFER_FILE,
+        help='Buffer file to write processed buffers to, default: %s'%BUFFER_FILE)
     o.add_option('--run', dest='run', action='store_true',
         help='Run commands, default is to only print commands as a dry run')
     o.set_description(__doc__)
@@ -32,7 +36,7 @@ if __name__ == '__main__':
     procDir = args[1]
     outputDir = args[2]
     scriptDir = opts.scriptDir
-    abc3Dir = opts.abc3Dir
+    #abc3Dir = opts.abc3Dir
 
     print datetime.datetime.now(), 'Starting ALFABURST Post-Processing'
 
@@ -86,18 +90,29 @@ if __name__ == '__main__':
                 (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
             else:
                 print cmd
-
-            # Move FILTERBANK file to PROC_DIR
-            if opts.run: shutil.move(inputDir + fbFileName, procDir + fbFileName)
-            else: print 'mv ' + inputDir + fbFileName + ' ' + procDir + fbFileName
-
-            # SCP DAT file to abc3
-            cmd = 'scp ' + inputDir + datFileName + ' artemis@abc3:' + abc3Dir + 'input/'
+            
+            # Write the processed buffer to a pandas dataframe
+            bufferFile = opts.bufferFile
+            cmd = scriptDir + BUFFER_SCRIPT + ' --buffer_output=' + bufferFile + ' ' + inputDir + datFileName
             if opts.run:
                 proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
             else:
                 print cmd
+
+            #datConv2Buff.py
+
+            # Move FILTERBANK file to PROC_DIR
+            if opts.run: shutil.move(inputDir + fbFileName, procDir + fbFileName)
+            else: print 'mv ' + inputDir + fbFileName + ' ' + procDir + fbFileName
+
+            ## SCP DAT file to abc3
+            #cmd = 'scp ' + inputDir + datFileName + ' artemis@abc3:' + abc3Dir + 'input/'
+            #if opts.run:
+            #    proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #    (stdoutdata, stderrdata) = proc.communicate() # (stdoutdata, stderrdata)
+            #else:
+            #    print cmd
 
             # Move DAT file to PROC_DIR
             if opts.run:

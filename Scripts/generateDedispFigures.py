@@ -18,8 +18,8 @@ from StringIO import StringIO # Python 2 specific, use io for Python 3
 SCRIPT_DIR = '/home/artemis/Survey/Scripts/' # HARDCODE, see --script_dir option
 EXTRACT_SCRIPT = 'extractBuffer.rb' # HARDCODE
 PLOTTING_SCRIPT = 'dedisperse/dedisperseFil.py' # HARDCODE
-#FEATURE_SCRIPT = 'dedisperse/extractFeatures.py' # HARDCODE
-FEATURE_SCRIPT = 'dedisperse/extractFeatures2.py' # HARDCODE
+FEATURE_SCRIPT = 'dedisperse/extractFeatures.py' # HARDCODE
+#FEATURE_SCRIPT = 'dedisperse/extractFeatures2.py' # HARDCODE
 
 if __name__ == '__main__':
     from optparse import OptionParser
